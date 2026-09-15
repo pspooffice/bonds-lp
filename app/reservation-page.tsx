@@ -175,7 +175,7 @@ export default function ReservationPage() {
   const [roomCount, setRoomCount] = useState(1);
   const [roomId, setRoomId] = useState(CONFIG.rooms[0].id);
   const [breakfast, setBreakfast] = useState(false);
-  const [dinner, setDinner] = useState(true);
+  const [dinner, setDinner] = useState(false);
   const [message, setMessage] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
@@ -474,7 +474,7 @@ export default function ReservationPage() {
               </div>
               <div>
                 <dt>水曜日</dt>
-                <dd>食事なしのみ受付</dd>
+                <dd>水曜提供分は受付なし</dd>
               </div>
               <div>
                 <dt>予約</dt>
