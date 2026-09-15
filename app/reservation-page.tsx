@@ -1,0 +1,618 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+
+type Room = {
+  id: string;
+  name: string;
+  size: string;
+  capacity: string;
+  minGuests: number;
+  maxGuests: number;
+  basePrice: number;
+  image: string;
+  description: string;
+  perRoom?: boolean;
+};
+
+type SubmitState = "idle" | "sending" | "sent" | "fallback" | "error";
+
+const CONFIG = {
+  emailTo: "tamura_n@3puku.co.jp",
+  lodgingDiscountPercent: 30,
+  breakfastPricePerPerson: 1650,
+  dinnerPricePerPerson: 8800,
+  mealUnavailableWeekdays: [3],
+  rooms: [
+    {
+      id: "twin",
+      name: "ツインルーム",
+      size: "11平米",
+      capacity: "1から2名",
+      minGuests: 1,
+      maxGuests: 2,
+      basePrice: 5000,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-twin01.webp",
+      description: "朝日やみかん畑を望める、シンプルで過ごしやすいツインルーム。"
+    },
+    {
+      id: "double",
+      name: "ダブルベッドルーム",
+      size: "11平米",
+      capacity: "1から2名",
+      minGuests: 1,
+      maxGuests: 2,
+      basePrice: 5000,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-double01.webp",
+      description: "キングサイズの大きなベッドで、カップルや小さなお子様連れにも使いやすいお部屋。"
+    },
+    {
+      id: "japanese",
+      name: "和室",
+      size: "11平米",
+      capacity: "1から2名",
+      minGuests: 1,
+      maxGuests: 2,
+      basePrice: 5000,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-japanese01.webp",
+      description: "布団をセルフで敷く、気軽に使える和室タイプ。"
+    },
+    {
+      id: "four-bed",
+      name: "4ベッドルーム",
+      size: "16平米",
+      capacity: "2から4名",
+      minGuests: 2,
+      maxGuests: 4,
+      basePrice: 5500,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-quad01.webp",
+      description: "家族やグループに向いた、4名まで泊まれるベッドルーム。"
+    },
+    {
+      id: "deluxe-twin",
+      name: "デラックスツイン",
+      size: "20平米",
+      capacity: "1から2名",
+      minGuests: 1,
+      maxGuests: 2,
+      basePrice: 8000,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-deluxe-twin01.webp",
+      description: "ソファーから海を眺められる、ゆとりのあるツインルーム。"
+    },
+    {
+      id: "ocean-suite",
+      name: "オーシャンスイート",
+      size: "27平米",
+      capacity: "1から2名",
+      minGuests: 1,
+      maxGuests: 2,
+      basePrice: 12000,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-ocean-suite01.webp",
+      description: "姫ヶ浜ビーチを目前に眺める、バス・トイレ付きの最上級オーシャンビュー。"
+    },
+    {
+      id: "bonds-2",
+      name: "1棟貸切 THE BONDS II",
+      size: "2LDK",
+      capacity: "2から8名",
+      minGuests: 2,
+      maxGuests: 8,
+      basePrice: 45000,
+      image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-bonds-2-01.webp",
+      description: "リビング、和室2部屋、キッチンを備えた大人数向けの別邸。料金は1棟単位です。",
+      perRoom: true
+    }
+  ] satisfies Room[]
+};
+
+const yen = new Intl.NumberFormat("ja-JP", {
+  style: "currency",
+  currency: "JPY",
+  maximumFractionDigits: 0
+});
+
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(date.getDate() + days);
+  return next;
+}
+
+function todayString() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return formatDate(now);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function isMealUnavailableForStay(checkInDate: string, nights: number) {
+  if (!checkInDate) return false;
+  const start = parseLocalDate(checkInDate);
+
+  for (let offset = 0; offset <= nights; offset += 1) {
+    const serviceDate = addDays(start, offset);
+    if (CONFIG.mealUnavailableWeekdays.includes(serviceDate.getDay())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function mealLabel(wantsBreakfast: boolean, wantsDinner: boolean) {
+  if (wantsBreakfast && wantsDinner) return "朝食あり・夕食あり";
+  if (wantsBreakfast) return "朝食あり";
+  if (wantsDinner) return "夕食あり";
+  return "食事なし";
+}
+
+export default function ReservationPage() {
+  const initialDate = useMemo(() => todayString(), []);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [checkInDate, setCheckInDate] = useState(initialDate);
+  const [nights, setNights] = useState(1);
+  const [guests, setGuests] = useState(2);
+  const [roomCount, setRoomCount] = useState(1);
+  const [roomId, setRoomId] = useState(CONFIG.rooms[0].id);
+  const [breakfast, setBreakfast] = useState(false);
+  const [dinner, setDinner] = useState(true);
+  const [message, setMessage] = useState("");
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [submitMessage, setSubmitMessage] = useState("");
+
+  const selectedRoom = CONFIG.rooms.find((room) => room.id === roomId) ?? CONFIG.rooms[0];
+  const boundedNights = clamp(nights || 1, 1, 14);
+  const maxRooms = selectedRoom.perRoom ? 1 : 6;
+  const boundedRoomCount = clamp(roomCount || 1, 1, maxRooms);
+  const minGuests = selectedRoom.minGuests * boundedRoomCount;
+  const maxGuests = selectedRoom.maxGuests * boundedRoomCount;
+  const boundedGuests = clamp(guests || minGuests, minGuests, maxGuests);
+  const checkoutDate = checkInDate ? formatDate(addDays(parseLocalDate(checkInDate), boundedNights)) : "";
+  const mealsUnavailable = isMealUnavailableForStay(checkInDate, boundedNights);
+  const wantsBreakfast = breakfast && !mealsUnavailable;
+  const wantsDinner = dinner && !mealsUnavailable;
+  const roomSubtotal =
+    (selectedRoom.perRoom ? selectedRoom.basePrice * boundedRoomCount : selectedRoom.basePrice * boundedGuests) *
+    boundedNights;
+  const lodgingDiscount = Math.round(roomSubtotal * (CONFIG.lodgingDiscountPercent / 100));
+  const discountedRoomSubtotal = roomSubtotal - lodgingDiscount;
+  const breakfastSubtotal = wantsBreakfast ? CONFIG.breakfastPricePerPerson * boundedGuests * boundedNights : 0;
+  const dinnerSubtotal = wantsDinner ? CONFIG.dinnerPricePerPerson * boundedGuests * boundedNights : 0;
+  const mealSubtotal = breakfastSubtotal + dinnerSubtotal;
+  const preDiscountTotal = roomSubtotal + mealSubtotal;
+  const total = discountedRoomSubtotal + mealSubtotal;
+  const priceSummary = `${selectedRoom.name} / ${boundedNights}泊 / ${boundedRoomCount}部屋 / ${boundedGuests}名 / ${mealLabel(
+    wantsBreakfast,
+    wantsDinner
+  )} / 宿代30%オフ ${yen.format(lodgingDiscount)}引き / 割引前合計 ${yen.format(preDiscountTotal)}`;
+
+  function selectRoom(nextRoomId: string) {
+    const nextRoom = CONFIG.rooms.find((room) => room.id === nextRoomId) ?? CONFIG.rooms[0];
+    const nextRoomCount = nextRoom.perRoom ? 1 : boundedRoomCount;
+    setRoomId(nextRoom.id);
+    setRoomCount(nextRoomCount);
+    setGuests(clamp(boundedGuests, nextRoom.minGuests * nextRoomCount, nextRoom.maxGuests * nextRoomCount));
+    document.querySelector("#request")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function setSafeNights(value: number) {
+    setNights(clamp(value || 1, 1, 14));
+  }
+
+  function setSafeRoomCount(value: number) {
+    const nextRoomCount = clamp(value || 1, 1, maxRooms);
+    setRoomCount(nextRoomCount);
+    setGuests(clamp(boundedGuests, selectedRoom.minGuests * nextRoomCount, selectedRoom.maxGuests * nextRoomCount));
+  }
+
+  function setSafeGuests(value: number) {
+    setGuests(clamp(value || minGuests, minGuests, maxGuests));
+  }
+
+  function buildMailBody() {
+    return [
+      "THE BONDS PSPO会員向け仮予約依頼",
+      "",
+      "※この依頼は予約確定ではありません。",
+      "",
+      `氏名: ${name}`,
+      `メールアドレス: ${email}`,
+      `電話番号: ${phone}`,
+      `チェックイン日: ${checkInDate}`,
+      `宿泊数: ${boundedNights}泊`,
+      `チェックアウト予定日: ${checkoutDate}`,
+      `人数: ${boundedGuests}名`,
+      `部屋数: ${boundedRoomCount}部屋`,
+      `部屋: ${selectedRoom.name}`,
+      `宿代: ${yen.format(roomSubtotal)}`,
+      `PSPO会員割引: 宿代30%オフ（-${yen.format(lodgingDiscount)}）`,
+      `割引後宿代: ${yen.format(discountedRoomSubtotal)}`,
+      `朝食: ${wantsBreakfast ? `あり（${yen.format(breakfastSubtotal)}）` : "なし"}`,
+      `夕食: ${wantsDinner ? `あり（${yen.format(dinnerSubtotal)}）` : "なし"}`,
+      `割引前合計: ${yen.format(preDiscountTotal)}`,
+      `PSPO会員特別価格: ${yen.format(total)}`,
+      "",
+      "備考:",
+      message || "なし",
+      "",
+      "BONDS側で空室、食事担当、料金条件をご確認のうえ返信をお願いします。"
+    ].join("\n");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitState("sending");
+    setSubmitMessage("");
+
+    const payload = {
+      name,
+      email,
+      phone,
+      checkInDate,
+      nights: boundedNights,
+      checkoutDate,
+      guests: boundedGuests,
+      roomCount: boundedRoomCount,
+      room: selectedRoom.name,
+      breakfast: wantsBreakfast,
+      dinner: wantsDinner,
+      roomSubtotal,
+      lodgingDiscount,
+      discountedRoomSubtotal,
+      breakfastSubtotal,
+      dinnerSubtotal,
+      preDiscountTotal,
+      total,
+      message
+    };
+
+    try {
+      const response = await fetch("/api/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.message || "送信に失敗しました。");
+      }
+
+      if (result.emailSent || result.sheetSaved) {
+        setSubmitState("sent");
+        setSubmitMessage("仮予約依頼を送信しました。BONDS側からの返信をお待ちください。");
+        return;
+      }
+
+      const subject = `【THE BONDS仮予約】${name}様 ${checkInDate}`;
+      const mailto = `mailto:${CONFIG.emailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+        buildMailBody()
+      )}`;
+      setSubmitState("fallback");
+      setSubmitMessage("メール送信設定が未完了のため、メールソフトを開きます。");
+      window.location.href = mailto;
+    } catch (error) {
+      setSubmitState("error");
+      setSubmitMessage(error instanceof Error ? error.message : "送信に失敗しました。");
+    }
+  }
+
+  return (
+    <>
+      <header className="site-header" aria-label="ページヘッダー">
+        <a className="brand" href="#top" aria-label="THE BONDS">
+          <span className="brand-mark">B</span>
+          <span>
+            <strong>THE BONDS</strong>
+            <small>PSPO Member Stay</small>
+          </span>
+        </a>
+        <nav className="nav-links" aria-label="主要ナビゲーション">
+          <a href="#appeal">魅力</a>
+          <a href="#food">料理</a>
+          <a href="#rooms">お部屋</a>
+          <a href="#request">仮予約</a>
+        </nav>
+      </header>
+
+      <main id="top">
+        <section className="hero">
+          <div className="hero-media" role="img" aria-label="THE BONDSの海辺の外観" />
+          <div className="hero-copy">
+            <p className="eyebrow">PSPO member special stay</p>
+            <h1>THE BONDS</h1>
+            <p className="lead">
+              PSPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
+              予約確定ではなく、BONDS側で食事担当・空室状況を確認してからご案内します。
+            </p>
+            <div className="hero-actions">
+              <a className="button primary" href="#request">
+                仮予約へ進む
+              </a>
+              <a className="button secondary" href="#rooms">
+                部屋を見る
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="notice-band" aria-label="仮予約の流れ">
+          <div>
+            <span className="step">1</span>
+            <strong>PSPO会員価格を確認</strong>
+            <p>人数、部屋数、朝食・夕食の有無で料金を確認します。</p>
+          </div>
+          <div>
+            <span className="step">2</span>
+            <strong>仮予約を送信</strong>
+            <p>フォーム内容はBONDS側へ送信されます。</p>
+          </div>
+          <div>
+            <span className="step">3</span>
+            <strong>やり取り後に確定</strong>
+            <p>空室と食事担当の可否を確認後、正式予約になります。</p>
+          </div>
+        </section>
+
+        <section className="section intro">
+          <div>
+            <p className="eyebrow">Island stay</p>
+            <h2>PSPO会員だけに開く、海辺の島ステイ</h2>
+          </div>
+          <p>
+            THE BONDSは愛媛・中島の姫ヶ浜ビーチそばにあるゲストハウスです。
+            全室オーシャンビューの客室と、道後の名店監修の料理を組み合わせて、
+            PSPO会員様向けの特別価格で滞在の仮予約を受け付けます。
+          </p>
+        </section>
+
+        <section className="section appeal-section" id="appeal">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Why BONDS</p>
+              <h2>絆を深める島滞在</h2>
+            </div>
+            <p>
+              都会の喧騒や日常のノイズから少し離れて、大切な人との時間を取り戻す。BONDSは、ただ泊まるだけではない島の滞在です。
+            </p>
+          </div>
+          <div className="appeal-grid">
+            <article>
+              <img src="https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/concept001.webp" alt="THE BONDSのコンセプト" />
+              <div>
+                <span>01</span>
+                <h3>大切な人と向き合う</h3>
+                <p>忙しい日常では流れてしまう会話も、島の静けさの中では自然とゆっくり交わせます。</p>
+              </div>
+            </article>
+            <article>
+              <img src="https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/concept003.webp" alt="中島の砂浜" />
+              <div>
+                <span>02</span>
+                <h3>海まで0秒のロケーション</h3>
+                <p>目の前に広がる海と砂浜。スマホを置いて、空と海と潮風だけを味わう贅沢があります。</p>
+              </div>
+            </article>
+            <article>
+              <img src="https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/concept005.webp" alt="島のごちそう" />
+              <div>
+                <span>03</span>
+                <h3>何もしない時間を楽しむ</h3>
+                <p>写真を撮ったあとは、予定を詰め込まず景色に身を任せる。気取らない上質さが魅力です。</p>
+              </div>
+            </article>
+            <article>
+              <img src="https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/concept004.webp" alt="中島の夕日と海" />
+              <div>
+                <span>04</span>
+                <h3>笑顔をつくる島のごちそう</h3>
+                <p>本格的な料理を、ゲストハウスらしいカジュアルな距離感で。滞在の記憶に残る時間になります。</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="section food-section" id="food">
+          <div className="food-media">
+            <img src="https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/top-img-restaurants01.webp" alt="THE BONDSの料理" />
+            <img src="https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/top-img-restaurants02.webp" alt="THE BONDSのレストラン料理" />
+          </div>
+          <div className="food-copy">
+            <p className="eyebrow">Restaurant</p>
+            <h2>島の滞在を特別にする料理</h2>
+            <p>
+              BONDSでは、松山道後の人気店監修の料理を楽しめます。
+              朝食と夕食をそれぞれ選ぶと、食事料金が自動で加算されます。
+            </p>
+            <dl className="food-facts">
+              <div>
+                <dt>朝食</dt>
+                <dd>{yen.format(CONFIG.breakfastPricePerPerson)}/名</dd>
+              </div>
+              <div>
+                <dt>夕食</dt>
+                <dd>{yen.format(CONFIG.dinnerPricePerPerson)}/名</dd>
+              </div>
+              <div>
+                <dt>水曜日</dt>
+                <dd>食事なしのみ受付</dd>
+              </div>
+              <div>
+                <dt>予約</dt>
+                <dd>食事担当確認後に確定</dd>
+              </div>
+            </dl>
+            <a className="button primary" href="#request">
+              食事付きで料金を見る
+            </a>
+          </div>
+        </section>
+
+        <section className="section" id="rooms">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Guest rooms</p>
+              <h2>お部屋を選ぶ</h2>
+            </div>
+            <p>表示料金は税込の目安です。PSPO会員特別価格として宿代が30%オフになります。</p>
+          </div>
+          <div className="room-grid" aria-live="polite">
+            {CONFIG.rooms.map((room) => (
+              <article className={`room-card ${room.id === selectedRoom.id ? "selected" : ""}`} key={room.id}>
+                <img className="room-image" src={room.image} alt={room.name} loading="lazy" />
+                <div className="room-body">
+                  <div className="room-meta">
+                    <span>{room.size}</span>
+                    <span>{room.capacity}</span>
+                  </div>
+                  <h3>{room.name}</h3>
+                  <p>{room.description}</p>
+                  <div className="room-price">
+                    <small>{room.perRoom ? "1棟税込" : "1名税込"}</small>
+                    <strong>{yen.format(room.basePrice)}</strong>
+                  </div>
+                  <button className="button select-room" type="button" onClick={() => selectRoom(room.id)}>
+                    この部屋を選ぶ
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="reservation-section" id="request">
+          <div className="reservation-copy">
+            <p className="eyebrow">Temporary request</p>
+            <h2>仮予約フォーム</h2>
+            <p>内容確認後、BONDS側からメールまたは電話でご連絡します。</p>
+            <div className="price-box desktop-price" aria-live="polite">
+              <span>PSPO会員特別価格</span>
+              <strong>{yen.format(total)}</strong>
+              <small>{priceSummary}</small>
+              <button
+                className="button price-jump"
+                type="button"
+                onClick={() => document.querySelector("#reservationForm")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                この内容で仮予約へ
+              </button>
+            </div>
+          </div>
+
+          <form className="request-form" id="reservationForm" onSubmit={handleSubmit}>
+            <div className="form-row">
+              <label htmlFor="name">氏名</label>
+              <input id="name" name="name" type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required />
+            </div>
+            <div className="form-row compact contact-grid">
+              <div>
+                <label htmlFor="email">メールアドレス</label>
+                <input id="email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+              </div>
+              <div>
+                <label htmlFor="phone">電話番号</label>
+                <input id="phone" name="phone" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required />
+              </div>
+            </div>
+            <div className="form-row compact">
+              <div>
+                <label htmlFor="date">チェックイン日</label>
+                <input id="date" name="date" type="date" min={initialDate} value={checkInDate} onChange={(event) => setCheckInDate(event.target.value)} required />
+              </div>
+              <div>
+                <label htmlFor="nights">宿泊数</label>
+                <input id="nights" name="nights" type="number" min="1" max="14" value={boundedNights} onChange={(event) => setSafeNights(Number(event.target.value))} required />
+              </div>
+              <div>
+                <label htmlFor="guests">人数</label>
+                <input id="guests" name="guests" type="number" min={minGuests} max={maxGuests} value={boundedGuests} onChange={(event) => setSafeGuests(Number(event.target.value))} required />
+              </div>
+              <div>
+                <label htmlFor="roomCount">部屋数</label>
+                <input id="roomCount" name="roomCount" type="number" min="1" max={maxRooms} value={boundedRoomCount} onChange={(event) => setSafeRoomCount(Number(event.target.value))} required />
+              </div>
+            </div>
+            <p className="checkout-note">チェックアウト予定日: {checkoutDate}</p>
+            <div className="form-row">
+              <label htmlFor="room">部屋</label>
+              <select id="room" name="room" value={selectedRoom.id} onChange={(event) => selectRoom(event.target.value)} required>
+                {CONFIG.rooms.map((room) => (
+                  <option value={room.id} key={room.id}>
+                    {room.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <fieldset className="choice-group">
+              <legend>食事の有無</legend>
+              <label className={mealsUnavailable ? "disabled" : ""}>
+                <input
+                  type="checkbox"
+                  name="breakfast"
+                  checked={wantsBreakfast}
+                  disabled={mealsUnavailable}
+                  onChange={(event) => setBreakfast(event.target.checked)}
+                />
+                <span>朝食あり</span>
+              </label>
+              <label className={mealsUnavailable ? "disabled" : ""}>
+                <input
+                  type="checkbox"
+                  name="dinner"
+                  checked={wantsDinner}
+                  disabled={mealsUnavailable}
+                  onChange={(event) => setDinner(event.target.checked)}
+                />
+                <span>夕食あり</span>
+              </label>
+            </fieldset>
+            <div className="price-box mobile-price" aria-live="polite">
+              <span>PSPO会員特別価格</span>
+              <strong>{yen.format(total)}</strong>
+              <small>{priceSummary}</small>
+            </div>
+            <div className="form-row">
+              <label htmlFor="message">備考</label>
+              <textarea
+                id="message"
+                name="message"
+                rows={4}
+                placeholder="到着予定、アレルギー、候補日など"
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+              />
+            </div>
+            <p className={`form-alert ${submitState === "sent" ? "success" : ""}`} role="status">
+              {mealsUnavailable ? "宿泊期間に水曜日が含まれるため、食事なしのみ選択できます。" : submitMessage}
+            </p>
+            <button className="button primary submit-button" type="submit" disabled={submitState === "sending"}>
+              {submitState === "sending" ? "送信中" : "仮予約を送信"}
+            </button>
+            <p className="sub-note">この送信は予約確定ではありません。食事担当の有無、空室、料金条件を確認後に確定します。</p>
+          </form>
+        </section>
+      </main>
+
+      <footer className="footer">
+        <strong>ALBERGO RESORT THE BONDS</strong>
+        <span>〒791-4503 愛媛県松山市長師55</span>
+        <span>TEL: 070-2294-6159</span>
+      </footer>
+    </>
+  );
+}

@@ -1,0 +1,780 @@
+:root {
+  --ink: #17201f;
+  --muted: #65706c;
+  --paper: #fbfaf6;
+  --surface: #ffffff;
+  --line: #d9ded6;
+  --teal: #0b6f70;
+  --teal-dark: #06494a;
+  --coral: #d96c4a;
+  --sun: #f5b84b;
+  --mist: #e8f1ef;
+  --shadow: 0 22px 70px rgba(28, 39, 36, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+  line-height: 1.7;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.site-header {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px clamp(18px, 4vw, 56px);
+  background: rgba(251, 250, 246, 0.86);
+  border-bottom: 1px solid rgba(217, 222, 214, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  background: var(--teal);
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.brand small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nav-links {
+  display: flex;
+  gap: clamp(12px, 2vw, 28px);
+  color: var(--muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  color: var(--teal-dark);
+}
+
+.hero {
+  position: relative;
+  min-height: 92vh;
+  display: grid;
+  align-items: flex-end;
+  padding: 118px clamp(18px, 5vw, 72px) 56px;
+  overflow: hidden;
+}
+
+.hero-media {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(12, 30, 28, 0.72), rgba(12, 30, 28, 0.22) 52%, rgba(12, 30, 28, 0.1)),
+    url("https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/20260407_top01.webp") center / cover;
+}
+
+.hero-copy {
+  position: relative;
+  max-width: 760px;
+  color: #fff;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--coral);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero .eyebrow {
+  color: var(--sun);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 18px;
+  font-size: clamp(48px, 9vw, 112px);
+  line-height: 0.92;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin-bottom: 18px;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+h3 {
+  margin-bottom: 8px;
+  font-size: 21px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.lead {
+  max-width: 680px;
+  margin-bottom: 28px;
+  font-size: clamp(16px, 2vw, 20px);
+}
+
+.hero-actions,
+.room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.button.primary {
+  color: #fff;
+  background: var(--coral);
+  box-shadow: 0 12px 28px rgba(217, 108, 74, 0.34);
+}
+
+.button.secondary {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.notice-band {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border-block: 1px solid var(--line);
+}
+
+.notice-band > div {
+  min-height: 148px;
+  padding: clamp(20px, 3vw, 34px);
+  background: var(--surface);
+}
+
+.step {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 16px;
+  color: #fff;
+  background: var(--teal);
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+.notice-band strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.notice-band p,
+.section-heading p,
+.intro > p,
+.split p,
+.reservation-copy p,
+.sub-note {
+  color: var(--muted);
+}
+
+.section {
+  padding: clamp(64px, 9vw, 116px) clamp(18px, 5vw, 72px);
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(280px, 1.15fr);
+  gap: clamp(28px, 6vw, 84px);
+  align-items: start;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-end;
+  margin-bottom: 28px;
+}
+
+.section-heading p {
+  max-width: 500px;
+  margin-bottom: 0;
+}
+
+.appeal-section {
+  background: #fff;
+}
+
+.appeal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.appeal-grid article {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(28, 39, 36, 0.08);
+}
+
+.appeal-grid img {
+  display: block;
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  background: var(--mist);
+}
+
+.appeal-grid article div {
+  padding: 20px;
+}
+
+.appeal-grid span {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--coral);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.appeal-grid p,
+.food-copy p,
+.food-facts dd {
+  color: var(--muted);
+}
+
+.food-section {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.85fr);
+  gap: clamp(28px, 6vw, 72px);
+  align-items: center;
+  background: var(--mist);
+}
+
+.food-media {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 14px;
+}
+
+.food-media img {
+  width: 100%;
+  min-height: 420px;
+  max-height: 560px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 16px 42px rgba(28, 39, 36, 0.14);
+}
+
+.food-media img + img {
+  margin-top: 48px;
+}
+
+.food-copy {
+  max-width: 560px;
+}
+
+.food-facts {
+  display: grid;
+  gap: 1px;
+  margin: 26px 0;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.food-facts div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.food-facts dt,
+.food-facts dd {
+  margin: 0;
+}
+
+.food-facts dt {
+  font-weight: 800;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.room-card {
+  display: grid;
+  grid-template-rows: 210px 1fr;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(28, 39, 36, 0.08);
+}
+
+.room-card.selected {
+  outline: 3px solid rgba(11, 111, 112, 0.24);
+  border-color: var(--teal);
+}
+
+.room-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--mist);
+}
+
+.room-body {
+  padding: 20px;
+}
+
+.room-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.room-meta span {
+  padding: 4px 9px;
+  color: var(--teal-dark);
+  background: var(--mist);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.room-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.room-price strong {
+  font-size: 22px;
+}
+
+.room-price small {
+  color: var(--muted);
+}
+
+.select-room {
+  width: 100%;
+  margin-top: 16px;
+  color: var(--teal-dark);
+  background: #fff;
+  border: 1px solid var(--teal);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr);
+  gap: clamp(28px, 6vw, 72px);
+  align-items: start;
+  background: var(--mist);
+}
+
+.availability-panel,
+.request-form,
+.price-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.availability-panel {
+  padding: 18px;
+}
+
+.panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.text-button {
+  color: var(--teal-dark);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.availability-list {
+  display: grid;
+  gap: 10px;
+}
+
+.date-row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.date-row button {
+  color: var(--teal-dark);
+  background: var(--mist);
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.status.limited::before {
+  background: var(--sun);
+}
+
+.status.closed::before {
+  background: var(--coral);
+}
+
+.reservation-section {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(320px, 1.2fr);
+  gap: clamp(28px, 6vw, 76px);
+  align-items: start;
+  padding: clamp(64px, 9vw, 116px) clamp(18px, 5vw, 72px);
+}
+
+.reservation-copy {
+  position: sticky;
+  top: 112px;
+}
+
+.price-box {
+  margin-top: 28px;
+  padding: 22px;
+}
+
+.price-box span,
+.price-box small {
+  display: block;
+  color: var(--muted);
+}
+
+.price-box strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--teal-dark);
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 1.05;
+}
+
+.price-jump {
+  width: 100%;
+  margin-top: 18px;
+  color: var(--teal-dark);
+  background: var(--mist);
+  border-color: transparent;
+}
+
+.mobile-price {
+  display: none;
+}
+
+.request-form {
+  display: grid;
+  gap: 18px;
+  padding: clamp(20px, 4vw, 34px);
+}
+
+.form-row {
+  display: grid;
+  gap: 8px;
+}
+
+.form-row.compact {
+  grid-template-columns: minmax(150px, 1fr) 100px 100px 100px;
+  gap: 14px;
+}
+
+.contact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-row.compact > div {
+  display: grid;
+  gap: 8px;
+}
+
+.checkout-note {
+  margin: -4px 0 0;
+  color: var(--teal-dark);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+label,
+legend {
+  font-weight: 800;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 48px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid rgba(11, 111, 112, 0.22);
+  border-color: var(--teal);
+}
+
+.choice-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+}
+
+.choice-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.choice-group label.disabled {
+  color: var(--muted);
+  background: #f3f3ef;
+  cursor: not-allowed;
+}
+
+.choice-group input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.form-alert {
+  min-height: 28px;
+  margin-bottom: 0;
+  color: var(--coral);
+  font-weight: 800;
+}
+
+.form-alert.success {
+  color: var(--teal-dark);
+}
+
+.submit-button {
+  width: 100%;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 28px clamp(18px, 5vw, 72px);
+  color: #fff;
+  background: var(--teal-dark);
+}
+
+@media (max-width: 980px) {
+  .notice-band,
+  .room-grid,
+  .appeal-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .intro,
+  .split,
+  .reservation-section,
+  .food-section {
+    grid-template-columns: 1fr;
+  }
+
+  .reservation-copy {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .hero {
+    min-height: 86vh;
+    padding-top: 148px;
+  }
+
+  .notice-band,
+  .room-grid,
+  .appeal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .food-media {
+    grid-template-columns: 1fr;
+  }
+
+  .food-media img {
+    min-height: 260px;
+  }
+
+  .food-media img + img {
+    margin-top: 0;
+  }
+
+  .section-heading {
+    display: block;
+  }
+
+  .date-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .date-row button {
+    width: 100%;
+  }
+
+  .desktop-price {
+    display: none;
+  }
+
+  .mobile-price {
+    display: block;
+    margin-top: 0;
+    box-shadow: 0 12px 36px rgba(28, 39, 36, 0.12);
+  }
+
+  .form-row.compact,
+  .choice-group {
+    grid-template-columns: 1fr;
+  }
+}
