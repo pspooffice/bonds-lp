@@ -17,6 +17,10 @@ type ReservationPayload = {
   discountedRoomSubtotal: number;
   breakfastSubtotal: number;
   dinnerSubtotal: number;
+  breakfastServiceCount?: number;
+  dinnerServiceCount?: number;
+  breakfastLabel?: string;
+  dinnerLabel?: string;
   preDiscountTotal: number;
   total: number;
   message?: string;
@@ -50,8 +54,8 @@ function mailBody(payload: ReservationPayload) {
     `宿代: ${yen.format(payload.roomSubtotal)}`,
     `PSPO会員割引: 宿代30%オフ（-${yen.format(payload.lodgingDiscount)}）`,
     `割引後宿代: ${yen.format(payload.discountedRoomSubtotal)}`,
-    `朝食: ${payload.breakfast ? `あり（${yen.format(payload.breakfastSubtotal)}）` : "なし"}`,
-    `夕食: ${payload.dinner ? `あり（${yen.format(payload.dinnerSubtotal)}）` : "なし"}`,
+    `朝食: ${payload.breakfastLabel || (payload.breakfast ? `あり（${yen.format(payload.breakfastSubtotal)}）` : "なし")}`,
+    `夕食: ${payload.dinnerLabel || (payload.dinner ? `あり（${yen.format(payload.dinnerSubtotal)}）` : "なし")}`,
     `割引前合計: ${yen.format(payload.preDiscountTotal)}`,
     `PSPO会員特別価格: ${yen.format(payload.total)}`,
     "",

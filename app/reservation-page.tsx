@@ -138,24 +138,29 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function isMealUnavailableForStay(checkInDate: string, nights: number) {
-  if (!checkInDate) return false;
-  const start = parseLocalDate(checkInDate);
-
-  for (let offset = 0; offset <= nights; offset += 1) {
-    const serviceDate = addDays(start, offset);
-    if (CONFIG.mealUnavailableWeekdays.includes(serviceDate.getDay())) {
-      return true;
-    }
-  }
-
-  return false;
+function isUnavailableWeekday(date: Date) {
+  return CONFIG.mealUnavailableWeekdays.includes(date.getDay());
 }
 
-function mealLabel(wantsBreakfast: boolean, wantsDinner: boolean) {
-  if (wantsBreakfast && wantsDinner) return "朝食あり・夕食あり";
-  if (wantsBreakfast) return "朝食あり";
-  if (wantsDinner) return "夕食あり";
+function serviceCount(checkInDate: string, nights: number, service: "breakfast" | "dinner") {
+  if (!checkInDate) return 0;
+  const start = parseLocalDate(checkInDate);
+  const firstOffset = service === "breakfast" ? 1 : 0;
+  const lastOffset = service === "breakfast" ? nights : nights - 1;
+  let available = 0;
+
+  for (let offset = firstOffset; offset <= lastOffset; offset += 1) {
+    const serviceDate = addDays(start, offset);
+    if (!isUnavailableWeekday(serviceDate)) available += 1;
+  }
+
+  return available;
+}
+
+function mealLabel(wantsBreakfast: boolean, wantsDinner: boolean, breakfastCount: number, dinnerCount: number) {
+  if (wantsBreakfast && wantsDinner) return `朝食${breakfastCount}回・夕食${dinnerCount}回`;
+  if (wantsBreakfast) return `朝食${breakfastCount}回`;
+  if (wantsDinner) return `夕食${dinnerCount}回`;
   return "食事なし";
 }
 
@@ -183,23 +188,38 @@ export default function ReservationPage() {
   const maxGuests = selectedRoom.maxGuests * boundedRoomCount;
   const boundedGuests = clamp(guests || minGuests, minGuests, maxGuests);
   const checkoutDate = checkInDate ? formatDate(addDays(parseLocalDate(checkInDate), boundedNights)) : "";
-  const mealsUnavailable = isMealUnavailableForStay(checkInDate, boundedNights);
-  const wantsBreakfast = breakfast && !mealsUnavailable;
-  const wantsDinner = dinner && !mealsUnavailable;
+  const breakfastServiceCount = serviceCount(checkInDate, boundedNights, "breakfast");
+  const dinnerServiceCount = serviceCount(checkInDate, boundedNights, "dinner");
+  const breakfastUnavailable = breakfastServiceCount === 0;
+  const dinnerUnavailable = dinnerServiceCount === 0;
+  const wantsBreakfast = breakfast && !breakfastUnavailable;
+  const wantsDinner = dinner && !dinnerUnavailable;
   const roomSubtotal =
     (selectedRoom.perRoom ? selectedRoom.basePrice * boundedRoomCount : selectedRoom.basePrice * boundedGuests) *
     boundedNights;
   const lodgingDiscount = Math.round(roomSubtotal * (CONFIG.lodgingDiscountPercent / 100));
   const discountedRoomSubtotal = roomSubtotal - lodgingDiscount;
-  const breakfastSubtotal = wantsBreakfast ? CONFIG.breakfastPricePerPerson * boundedGuests * boundedNights : 0;
-  const dinnerSubtotal = wantsDinner ? CONFIG.dinnerPricePerPerson * boundedGuests * boundedNights : 0;
+  const breakfastSubtotal = wantsBreakfast ? CONFIG.breakfastPricePerPerson * boundedGuests * breakfastServiceCount : 0;
+  const dinnerSubtotal = wantsDinner ? CONFIG.dinnerPricePerPerson * boundedGuests * dinnerServiceCount : 0;
   const mealSubtotal = breakfastSubtotal + dinnerSubtotal;
   const preDiscountTotal = roomSubtotal + mealSubtotal;
   const total = discountedRoomSubtotal + mealSubtotal;
   const priceSummary = `${selectedRoom.name} / ${boundedNights}泊 / ${boundedRoomCount}部屋 / ${boundedGuests}名 / ${mealLabel(
     wantsBreakfast,
-    wantsDinner
+    wantsDinner,
+    breakfastServiceCount,
+    dinnerServiceCount
   )} / 宿代30%オフ ${yen.format(lodgingDiscount)}引き / 割引前合計 ${yen.format(preDiscountTotal)}`;
+  const breakfastLabel = wantsBreakfast ? `あり（${breakfastServiceCount}回 / ${yen.format(breakfastSubtotal)}）` : "なし";
+  const dinnerLabel = wantsDinner ? `あり（${dinnerServiceCount}回 / ${yen.format(dinnerSubtotal)}）` : "なし";
+  const mealNotice = [
+    breakfastUnavailable ? "朝食提供日が水曜日のため、朝食は選択できません。" : "",
+    dinnerUnavailable ? "夕食提供日が水曜日のため、夕食は選択できません。" : "",
+    wantsBreakfast && breakfastServiceCount < boundedNights ? `朝食は水曜日を除く${breakfastServiceCount}回分で計算します。` : "",
+    wantsDinner && dinnerServiceCount < boundedNights ? `夕食は水曜日を除く${dinnerServiceCount}回分で計算します。` : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   function selectRoom(nextRoomId: string) {
     const nextRoom = CONFIG.rooms.find((room) => room.id === nextRoomId) ?? CONFIG.rooms[0];
@@ -242,8 +262,8 @@ export default function ReservationPage() {
       `宿代: ${yen.format(roomSubtotal)}`,
       `PSPO会員割引: 宿代30%オフ（-${yen.format(lodgingDiscount)}）`,
       `割引後宿代: ${yen.format(discountedRoomSubtotal)}`,
-      `朝食: ${wantsBreakfast ? `あり（${yen.format(breakfastSubtotal)}）` : "なし"}`,
-      `夕食: ${wantsDinner ? `あり（${yen.format(dinnerSubtotal)}）` : "なし"}`,
+      `朝食: ${breakfastLabel}`,
+      `夕食: ${dinnerLabel}`,
       `割引前合計: ${yen.format(preDiscountTotal)}`,
       `PSPO会員特別価格: ${yen.format(total)}`,
       "",
@@ -276,6 +296,10 @@ export default function ReservationPage() {
       discountedRoomSubtotal,
       breakfastSubtotal,
       dinnerSubtotal,
+      breakfastServiceCount,
+      dinnerServiceCount,
+      breakfastLabel,
+      dinnerLabel,
       preDiscountTotal,
       total,
       message
@@ -560,25 +584,25 @@ export default function ReservationPage() {
             </div>
             <fieldset className="choice-group">
               <legend>食事の有無</legend>
-              <label className={mealsUnavailable ? "disabled" : ""}>
+              <label className={breakfastUnavailable ? "disabled" : ""}>
                 <input
                   type="checkbox"
                   name="breakfast"
                   checked={wantsBreakfast}
-                  disabled={mealsUnavailable}
+                  disabled={breakfastUnavailable}
                   onChange={(event) => setBreakfast(event.target.checked)}
                 />
-                <span>朝食あり</span>
+                <span>朝食あり{breakfastServiceCount > 0 ? `（${breakfastServiceCount}回）` : ""}</span>
               </label>
-              <label className={mealsUnavailable ? "disabled" : ""}>
+              <label className={dinnerUnavailable ? "disabled" : ""}>
                 <input
                   type="checkbox"
                   name="dinner"
                   checked={wantsDinner}
-                  disabled={mealsUnavailable}
+                  disabled={dinnerUnavailable}
                   onChange={(event) => setDinner(event.target.checked)}
                 />
-                <span>夕食あり</span>
+                <span>夕食あり{dinnerServiceCount > 0 ? `（${dinnerServiceCount}回）` : ""}</span>
               </label>
             </fieldset>
             <div className="price-box mobile-price" aria-live="polite">
@@ -598,7 +622,7 @@ export default function ReservationPage() {
               />
             </div>
             <p className={`form-alert ${submitState === "sent" ? "success" : ""}`} role="status">
-              {mealsUnavailable ? "宿泊期間に水曜日が含まれるため、食事なしのみ選択できます。" : submitMessage}
+              {mealNotice || submitMessage}
             </p>
             <button className="button primary submit-button" type="submit" disabled={submitState === "sending"}>
               {submitState === "sending" ? "送信中" : "仮予約を送信"}
@@ -613,6 +637,18 @@ export default function ReservationPage() {
         <span>〒791-4503 愛媛県松山市長師55</span>
         <span>TEL: 070-2294-6159</span>
       </footer>
+      <div className="mobile-price-bar" aria-live="polite">
+        <div>
+          <span>PSPO会員特別価格</span>
+          <strong>{yen.format(total)}</strong>
+        </div>
+        <button
+          type="button"
+          onClick={() => document.querySelector("#reservationForm")?.scrollIntoView({ behavior: "smooth" })}
+        >
+          仮予約へ
+        </button>
+      </div>
     </>
   );
 }

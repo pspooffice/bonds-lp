@@ -573,6 +573,10 @@ h3 {
   display: none;
 }
 
+.mobile-price-bar {
+  display: none;
+}
+
 .request-form {
   display: grid;
   gap: 18px;
@@ -714,6 +718,10 @@ textarea:focus {
 }
 
 @media (max-width: 680px) {
+  body {
+    padding-bottom: 88px;
+  }
+
   .site-header {
     align-items: flex-start;
     flex-direction: column;
@@ -771,6 +779,51 @@ textarea:focus {
     display: block;
     margin-top: 0;
     box-shadow: 0 12px 36px rgba(28, 39, 36, 0.12);
+  }
+
+  .mobile-price-bar {
+    position: fixed;
+    z-index: 30;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -10px 34px rgba(28, 39, 36, 0.14);
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-price-bar span,
+  .mobile-price-bar strong {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .mobile-price-bar span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .mobile-price-bar strong {
+    color: var(--teal-dark);
+    font-size: 24px;
+  }
+
+  .mobile-price-bar button {
+    min-width: 104px;
+    min-height: 44px;
+    color: #fff;
+    background: var(--coral);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 800;
   }
 
   .form-row.compact,
