@@ -71,12 +71,18 @@ async function saveToSheet(payload: ReservationPayload) {
     body: JSON.stringify({
       submittedAt: new Date().toISOString(),
       status: "未対応",
+      secret: process.env.GOOGLE_APPS_SCRIPT_SECRET || "",
       ...payload
     })
   });
 
   if (!response.ok) {
     throw new Error("Googleスプレッドシートへの保存に失敗しました。");
+  }
+
+  const result = await response.json().catch(() => ({ ok: true }));
+  if (result.ok === false) {
+    throw new Error(result.message || "Googleスプレッドシートへの保存に失敗しました。");
   }
 
   return true;
