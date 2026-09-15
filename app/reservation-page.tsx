@@ -171,7 +171,7 @@ export default function ReservationPage() {
   const [phone, setPhone] = useState("");
   const [checkInDate, setCheckInDate] = useState(initialDate);
   const [nights, setNights] = useState(1);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(1);
   const [roomCount, setRoomCount] = useState(1);
   const [roomId, setRoomId] = useState(CONFIG.rooms[0].id);
   const [breakfast, setBreakfast] = useState(false);
