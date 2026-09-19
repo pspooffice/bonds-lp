@@ -649,6 +649,14 @@ h3 {
   background: var(--coral);
 }
 
+.availability-status.loading::before,
+.calendar-loading span {
+  background: transparent;
+  border: 2px solid var(--line);
+  border-top-color: var(--teal);
+  animation: availability-spin 700ms linear infinite;
+}
+
 .room-choice-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -712,12 +720,38 @@ h3 {
 }
 
 .availability-calendar {
+  position: relative;
   display: grid;
   gap: 10px;
   padding: 16px;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.calendar-loading {
+  position: absolute;
+  z-index: 2;
+  inset: 88px 12px 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--teal-dark);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.calendar-loading span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+@keyframes availability-spin {
+  to { transform: rotate(360deg); }
 }
 
 .calendar-header {

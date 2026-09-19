@@ -13,6 +13,7 @@ type Room = {
   image: string;
   description: string;
   perRoom?: boolean;
+  priceGroup?: "standard" | "upper" | "suite";
 };
 
 type SubmitState = "idle" | "sending" | "sent" | "fallback" | "error";
@@ -43,6 +44,7 @@ const CONFIG = {
       minGuests: 1,
       maxGuests: 2,
       basePrice: 5000,
+      priceGroup: "standard",
       image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-twin01.webp",
       description: "朝日やみかん畑を望める、シンプルで過ごしやすいツインルーム。"
     },
@@ -54,6 +56,7 @@ const CONFIG = {
       minGuests: 1,
       maxGuests: 2,
       basePrice: 5000,
+      priceGroup: "standard",
       image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-double01.webp",
       description: "キングサイズの大きなベッドで、カップルや小さなお子様連れにも使いやすいお部屋。"
     },
@@ -65,6 +68,7 @@ const CONFIG = {
       minGuests: 1,
       maxGuests: 2,
       basePrice: 5000,
+      priceGroup: "standard",
       image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-japanese01.webp",
       description: "布団をセルフで敷く、気軽に使える和室タイプ。"
     },
@@ -73,9 +77,10 @@ const CONFIG = {
       name: "4ベッドルーム",
       size: "16平米",
       capacity: "2から4名",
-      minGuests: 2,
+      minGuests: 1,
       maxGuests: 4,
       basePrice: 5500,
+      priceGroup: "upper",
       image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-quad01.webp",
       description: "家族やグループに向いた、4名まで泊まれるベッドルーム。"
     },
@@ -87,6 +92,7 @@ const CONFIG = {
       minGuests: 1,
       maxGuests: 2,
       basePrice: 8000,
+      priceGroup: "upper",
       image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-deluxe-twin01.webp",
       description: "ソファーから海を眺められる、ゆとりのあるツインルーム。"
     },
@@ -98,6 +104,7 @@ const CONFIG = {
       minGuests: 1,
       maxGuests: 2,
       basePrice: 12000,
+      priceGroup: "suite",
       image: "https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/room-ocean-suite01.webp",
       description: "姫ヶ浜ビーチを目前に眺める、バス・トイレ付きの最上級オーシャンビュー。"
     },
@@ -115,6 +122,12 @@ const CONFIG = {
     }
   ] satisfies Room[]
 };
+
+const LODGING_RATES = {
+  standard: { regular: { single: 5500, shared: 4840 }, premium: { single: 6050, shared: 5390 } },
+  upper: { regular: { single: 8470, shared: 6050 }, premium: { single: 9020, shared: 6600 } },
+  suite: { regular: { single: 12100, shared: 12100 }, premium: { single: 12650, shared: 12650 } }
+} as const;
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -160,6 +173,69 @@ function clamp(value: number, min: number, max: number) {
 
 function isUnavailableWeekday(date: Date) {
   return CONFIG.mealUnavailableWeekdays.includes(date.getDay());
+}
+
+function nthMonday(year: number, month: number, nth: number) {
+  const first = new Date(year, month, 1);
+  return 1 + ((8 - first.getDay()) % 7) + (nth - 1) * 7;
+}
+
+function japaneseHolidays(year: number) {
+  const springEquinox = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+  const autumnEquinox = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+  const holidays = new Set([
+    `${year}-01-01`, `${year}-01-${String(nthMonday(year, 0, 2)).padStart(2, "0")}`,
+    `${year}-02-11`, `${year}-02-23`, `${year}-03-${String(springEquinox).padStart(2, "0")}`,
+    `${year}-04-29`, `${year}-05-03`, `${year}-05-04`, `${year}-05-05`,
+    `${year}-07-${String(nthMonday(year, 6, 3)).padStart(2, "0")}`, `${year}-08-11`,
+    `${year}-09-${String(nthMonday(year, 8, 3)).padStart(2, "0")}`, `${year}-09-${String(autumnEquinox).padStart(2, "0")}`,
+    `${year}-10-${String(nthMonday(year, 9, 2)).padStart(2, "0")}`, `${year}-11-03`, `${year}-11-23`
+  ]);
+
+  Array.from(holidays).forEach((holiday) => {
+    const date = parseLocalDate(holiday);
+    if (date.getDay() !== 0) return;
+    do date.setDate(date.getDate() + 1); while (holidays.has(formatDate(date)));
+    holidays.add(formatDate(date));
+  });
+
+  for (let date = new Date(year, 0, 2); date.getFullYear() === year; date.setDate(date.getDate() + 1)) {
+    if (holidays.has(formatDate(addDays(date, -1))) && holidays.has(formatDate(addDays(date, 1)))) {
+      holidays.add(formatDate(date));
+    }
+  }
+
+  return holidays;
+}
+
+function isPremiumDate(date: Date) {
+  return date.getDay() === 0 || date.getDay() === 6 || japaneseHolidays(date.getFullYear()).has(formatDate(date));
+}
+
+function calculateRoomSubtotal(room: Room, guests: number, roomCount: number, nights: number, checkInDate: string) {
+  if (room.perRoom || !room.priceGroup) return room.basePrice * roomCount * nights;
+  const rates = LODGING_RATES[room.priceGroup];
+  let subtotal = 0;
+
+  for (let night = 0; night < nights; night += 1) {
+    const stayDate = addDays(parseLocalDate(checkInDate), night);
+    const rate = isPremiumDate(stayDate) ? rates.premium : rates.regular;
+    let remainingGuests = guests;
+
+    for (let roomIndex = 0; roomIndex < roomCount; roomIndex += 1) {
+      const remainingRooms = roomCount - roomIndex - 1;
+      const occupancy = Math.min(room.maxGuests, remainingGuests - remainingRooms);
+      subtotal += occupancy === 1 ? rate.single : rate.shared * occupancy;
+      remainingGuests -= occupancy;
+    }
+  }
+
+  return subtotal;
+}
+
+function startingPrice(room: Room) {
+  if (room.perRoom || !room.priceGroup) return room.basePrice;
+  return LODGING_RATES[room.priceGroup].regular.shared;
 }
 
 function serviceCount(checkInDate: string, nights: number, service: "breakfast" | "dinner") {
@@ -217,9 +293,7 @@ export default function ReservationPage() {
   const dinnerUnavailable = dinnerServiceCount === 0;
   const wantsBreakfast = breakfast && !breakfastUnavailable;
   const wantsDinner = dinner && !dinnerUnavailable;
-  const roomSubtotal =
-    (selectedRoom.perRoom ? selectedRoom.basePrice * boundedRoomCount : selectedRoom.basePrice * boundedGuests) *
-    boundedNights;
+  const roomSubtotal = calculateRoomSubtotal(selectedRoom, boundedGuests, boundedRoomCount, boundedNights, checkInDate);
   const lodgingDiscount = Math.round(roomSubtotal * (CONFIG.lodgingDiscountPercent / 100));
   const discountedRoomSubtotal = roomSubtotal - lodgingDiscount;
   const breakfastSubtotal = wantsBreakfast ? CONFIG.breakfastPricePerPerson * boundedGuests * breakfastServiceCount : 0;
@@ -614,7 +688,7 @@ export default function ReservationPage() {
               <p className="eyebrow">Guest rooms</p>
               <h2>お部屋を選ぶ</h2>
             </div>
-            <p>表示料金は税込の目安です。PSPO会員特別価格として宿代が30%オフになります。</p>
+            <p>通常宿泊料は利用人数と宿泊日で変わります。土曜・日曜・祝日は土曜料金、宿代はPSPO会員価格として30%オフです。</p>
           </div>
           <div className="room-grid" aria-live="polite">
             {CONFIG.rooms.map((room) => (
@@ -628,8 +702,8 @@ export default function ReservationPage() {
                   <h3>{room.name}</h3>
                   <p>{room.description}</p>
                   <div className="room-price">
-                    <small>{room.perRoom ? "1棟税込" : "1名税込"}</small>
-                    <strong>{yen.format(room.basePrice)}</strong>
+                    <small>{room.perRoom ? "1棟税込" : "通常料金・1名1泊〜"}</small>
+                    <strong>{yen.format(startingPrice(room))}</strong>
                   </div>
                   <button className="button select-room" type="button" onClick={() => selectRoom(room.id)}>
                     この部屋を選ぶ
@@ -685,7 +759,7 @@ export default function ReservationPage() {
               </div>
             </div>
             <p className="checkout-note">チェックアウト予定日: {checkoutDate}</p>
-            <section className="availability-calendar" aria-label="空室カレンダー">
+            <section className="availability-calendar" aria-label="空室カレンダー" aria-busy={calendarAvailability.state === "loading"}>
               <div className="calendar-header">
                 <button type="button" onClick={() => setCalendarMonth(shiftMonth(calendarMonth, -1))} aria-label="前の月">
                   ‹
@@ -696,6 +770,9 @@ export default function ReservationPage() {
                 </button>
               </div>
               <p className="calendar-room-name">{boundedNights}泊で利用できる日</p>
+              {calendarAvailability.state === "loading" && (
+                <div className="calendar-loading" role="status"><span />空室を読み込み中</div>
+              )}
               <div className="calendar-weekdays" aria-hidden="true">
                 {['日', '月', '火', '水', '木', '金', '土'].map((day) => <span key={day}>{day}</span>)}
               </div>
@@ -753,7 +830,7 @@ export default function ReservationPage() {
                 })}
               </div>
               <p
-                className={`availability-status ${selectedRoomAvailable ? "available" : selectedRoomFull ? "full" : "unknown"}`}
+                className={`availability-status ${availability.state === "loading" ? "loading" : selectedRoomAvailable ? "available" : selectedRoomFull ? "full" : "unknown"}`}
                 role="status"
               >
                 {availabilityMessage}
