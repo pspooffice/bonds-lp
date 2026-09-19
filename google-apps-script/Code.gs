@@ -64,17 +64,24 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
     const complete = stayDates.every(function(date) { return parsed.knownDates[date]; });
     const typesToCheck = roomType ? [roomType] : roomTypes;
     let hasKnownRoom = false;
-    const hasAvailableRoom = typesToCheck.some(function(type) {
+    let totalAvailableRooms = 0;
+    typesToCheck.forEach(function(type) {
       const physicalRooms = parsed.occupancy[type] || {};
       if (Object.keys(physicalRooms).length > 0) hasKnownRoom = true;
-      return Object.keys(physicalRooms).filter(function(roomId) {
+      totalAvailableRooms += Object.keys(physicalRooms).filter(function(roomId) {
         return stayDates.every(function(date) {
           return Object.prototype.hasOwnProperty.call(physicalRooms[roomId], date) && !physicalRooms[roomId][date];
         });
-      }).length >= roomCount;
+      }).length;
     });
 
-    days[startDateKey] = !complete || !hasKnownRoom ? "unknown" : hasAvailableRoom ? "available" : "full";
+    days[startDateKey] = !complete || !hasKnownRoom
+      ? "unknown"
+      : totalAvailableRooms < roomCount
+        ? "full"
+        : !roomType && totalAvailableRooms <= 2
+          ? "limited"
+          : "available";
   });
 
   return { ok: true, month: month, nights: nights, roomType: roomType, days: days };
@@ -250,9 +257,15 @@ function getAvailability(checkInDate, nights) {
       });
     }).length;
 
+    const totalCount = Object.keys(physicalRooms).length;
     rooms[roomType] = {
-      status: calendarComplete && Object.keys(physicalRooms).length > 0 ? (availableCount > 0 ? "available" : "full") : "unknown",
-      availableCount: availableCount
+      status: !calendarComplete || totalCount === 0
+        ? "unknown"
+        : availableCount === 0
+          ? "full"
+          : availableCount < totalCount ? "limited" : "available",
+      availableCount: availableCount,
+      totalCount: totalCount
     };
   });
 
