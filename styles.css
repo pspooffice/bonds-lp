@@ -650,7 +650,8 @@ h3 {
 }
 
 .availability-status.loading::before,
-.calendar-loading span {
+.calendar-loading span,
+.room-choice-loading span {
   background: transparent;
   border: 2px solid var(--line);
   border-top-color: var(--teal);
@@ -707,10 +708,6 @@ h3 {
   color: var(--coral);
 }
 
-.room-choice-list em.limited {
-  color: #9a6a00;
-}
-
 .room-choice-list button.selected {
   background: var(--mist);
   border-color: var(--teal);
@@ -721,6 +718,27 @@ h3 {
   color: var(--muted);
   background: #f4f4f1;
   cursor: not-allowed;
+}
+
+.room-choice-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 84px;
+  color: var(--teal-dark);
+  background: var(--mist);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.room-choice-loading span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
 }
 
 .availability-calendar {
@@ -836,15 +854,6 @@ h3 {
 
 .calendar-grid button.available strong {
   color: var(--teal);
-}
-
-.calendar-grid button.limited {
-  background: #fffaf0;
-  border-color: #e0bd72;
-}
-
-.calendar-grid button.limited strong {
-  color: #9a6a00;
 }
 
 .calendar-grid button.full {

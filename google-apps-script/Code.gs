@@ -77,11 +77,7 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
 
     days[startDateKey] = !complete || !hasKnownRoom
       ? "unknown"
-      : totalAvailableRooms < roomCount
-        ? "full"
-        : !roomType && totalAvailableRooms <= 2
-          ? "limited"
-          : "available";
+      : totalAvailableRooms < roomCount ? "full" : "available";
   });
 
   return { ok: true, month: month, nights: nights, roomType: roomType, days: days };
@@ -259,11 +255,7 @@ function getAvailability(checkInDate, nights) {
 
     const totalCount = Object.keys(physicalRooms).length;
     rooms[roomType] = {
-      status: !calendarComplete || totalCount === 0
-        ? "unknown"
-        : availableCount === 0
-          ? "full"
-          : availableCount < totalCount ? "limited" : "available",
+      status: !calendarComplete || totalCount === 0 ? "unknown" : availableCount === 0 ? "full" : "available",
       availableCount: availableCount,
       totalCount: totalCount
     };

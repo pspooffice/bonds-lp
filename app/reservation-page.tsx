@@ -17,7 +17,7 @@ type Room = {
 };
 
 type SubmitState = "idle" | "sending" | "sent" | "fallback" | "error";
-type AvailabilityStatus = "available" | "limited" | "full" | "unknown";
+type AvailabilityStatus = "available" | "full" | "unknown";
 type AvailabilityRoom = { status: AvailabilityStatus; availableCount: number; totalCount?: number };
 type AvailabilityState = {
   state: "loading" | "ready" | "unavailable" | "error";
@@ -322,7 +322,7 @@ export default function ReservationPage() {
   const selectedAvailability = availability.rooms[selectedRoom.id];
   const selectedRoomAvailable =
     availability.state === "ready" &&
-    (selectedAvailability?.status === "available" || selectedAvailability?.status === "limited") &&
+    selectedAvailability?.status === "available" &&
     selectedAvailability.availableCount >= boundedRoomCount;
   const selectedRoomFull =
     availability.state === "ready" &&
@@ -784,7 +784,7 @@ export default function ReservationPage() {
                   const status = calendarAvailability.days[date] || "unknown";
                   const isPast = date < initialDate;
                   const selectable = !isPast && status !== "full";
-                  const mark = status === "available" ? "○" : status === "limited" ? "△" : status === "full" ? "×" : "―";
+                  const mark = status === "available" ? "○" : status === "full" ? "×" : "―";
                   return (
                     <button
                       type="button"
@@ -792,7 +792,7 @@ export default function ReservationPage() {
                       key={date}
                       disabled={!selectable}
                       onClick={() => chooseCheckInDate(date)}
-                      aria-label={`${date} ${status === "available" ? "空室あり" : status === "limited" ? "空室わずか" : status === "full" ? "満室" : "要確認"}`}
+                      aria-label={`${date} ${status === "available" ? "空室あり" : status === "full" ? "満室" : "要確認"}`}
                     >
                       <span>{Number(date.slice(-2))}</span>
                       <strong>{isPast ? "" : mark}</strong>
@@ -801,14 +801,16 @@ export default function ReservationPage() {
                 })}
               </div>
               <div className="calendar-legend">
-                <span>○ 空室あり</span><span>△ 空室わずか</span><span>× 満室</span><span>― 要確認</span>
+                <span>○ 空室あり</span><span>× 満室</span><span>― 要確認</span>
               </div>
               {calendarAvailability.state === "error" && <p className="calendar-error">空室カレンダーを取得できませんでした。</p>}
             </section>
             <div className="form-row">
               <span className="field-label">利用する部屋</span>
-              <div className="room-choice-list" role="radiogroup" aria-label="利用する部屋">
-                {CONFIG.rooms.map((room) => {
+              <div className="room-choice-list" role="radiogroup" aria-label="利用する部屋" aria-busy={availability.state === "loading"}>
+                {availability.state === "loading" ? (
+                  <div className="room-choice-loading" role="status"><span />利用可能な部屋を読み込み中</div>
+                ) : CONFIG.rooms.map((room) => {
                   const roomAvailability = availability.rooms[room.id];
                   const roomFull =
                     availability.state === "ready" &&
@@ -817,7 +819,7 @@ export default function ReservationPage() {
                   const availabilityLabel =
                     availability.state !== "ready" || !roomAvailability || roomAvailability.status === "unknown"
                       ? "要確認"
-                      : roomAvailability.status === "limited" ? "空室わずか" : roomAvailability.availableCount > 0 ? "空室あり" : "満室";
+                      : roomAvailability.availableCount > 0 ? "空室あり" : "満室";
                   return (
                     <button
                       type="button"
@@ -829,7 +831,7 @@ export default function ReservationPage() {
                       key={room.id}
                     >
                       <span><strong>{room.name}</strong><small>{room.capacity}</small></span>
-                      <em className={roomFull ? "full" : roomAvailability?.status === "limited" ? "limited" : ""}>{availabilityLabel}</em>
+                      <em className={roomFull ? "full" : ""}>{availabilityLabel}</em>
                     </button>
                   );
                 })}
