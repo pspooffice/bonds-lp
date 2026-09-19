@@ -20,7 +20,7 @@ type SubmitState = "idle" | "sending" | "sent" | "fallback" | "error";
 type AvailabilityStatus = "available" | "full" | "unknown";
 type AvailabilityRoom = { status: AvailabilityStatus; availableCount: number; totalCount?: number };
 type AvailabilityState = {
-  state: "loading" | "ready" | "unavailable" | "error";
+  state: "idle" | "loading" | "ready" | "unavailable" | "error";
   rooms: Record<string, AvailabilityRoom>;
   missingDates?: string[];
 };
@@ -234,7 +234,7 @@ export default function ReservationPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [checkInDate, setCheckInDate] = useState(initialDate);
+  const [checkInDate, setCheckInDate] = useState("");
   const [nights, setNights] = useState(1);
   const [guests, setGuests] = useState(1);
   const [roomCount, setRoomCount] = useState(1);
@@ -244,7 +244,7 @@ export default function ReservationPage() {
   const [message, setMessage] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
-  const [availability, setAvailability] = useState<AvailabilityState>({ state: "loading", rooms: {} });
+  const [availability, setAvailability] = useState<AvailabilityState>({ state: "idle", rooms: {} });
   const [calendarMonth, setCalendarMonth] = useState(() => initialDate.slice(0, 7));
   const [calendarAvailability, setCalendarAvailability] = useState<CalendarState>({ state: "loading", days: {} });
 
@@ -258,11 +258,13 @@ export default function ReservationPage() {
   const checkoutDate = checkInDate ? formatDate(addDays(parseLocalDate(checkInDate), boundedNights)) : "";
   const breakfastServiceCount = serviceCount(checkInDate, boundedNights, "breakfast");
   const dinnerServiceCount = serviceCount(checkInDate, boundedNights, "dinner");
-  const breakfastUnavailable = breakfastServiceCount === 0;
-  const dinnerUnavailable = dinnerServiceCount === 0;
+  const breakfastUnavailable = !checkInDate || breakfastServiceCount === 0;
+  const dinnerUnavailable = !checkInDate || dinnerServiceCount === 0;
   const wantsBreakfast = breakfast && !breakfastUnavailable;
   const wantsDinner = dinner && !dinnerUnavailable;
-  const roomSubtotal = calculateRoomSubtotal(selectedRoom, boundedGuests, boundedRoomCount, boundedNights, checkInDate);
+  const roomSubtotal = checkInDate
+    ? calculateRoomSubtotal(selectedRoom, boundedGuests, boundedRoomCount, boundedNights, checkInDate)
+    : 0;
   const lodgingDiscount = Math.round(roomSubtotal * (CONFIG.lodgingDiscountPercent / 100));
   const discountedRoomSubtotal = roomSubtotal - lodgingDiscount;
   const breakfastSubtotal = wantsBreakfast ? CONFIG.breakfastPricePerPerson * boundedGuests * breakfastServiceCount : 0;
@@ -270,17 +272,19 @@ export default function ReservationPage() {
   const mealSubtotal = breakfastSubtotal + dinnerSubtotal;
   const preDiscountTotal = roomSubtotal + mealSubtotal;
   const total = discountedRoomSubtotal + mealSubtotal;
-  const priceSummary = `${selectedRoom.name} / ${boundedNights}泊 / ${boundedRoomCount}部屋 / ${boundedGuests}名 / ${mealLabel(
-    wantsBreakfast,
-    wantsDinner,
-    breakfastServiceCount,
-    dinnerServiceCount
-  )} / 宿代30%オフ ${yen.format(lodgingDiscount)}引き / 割引前合計 ${yen.format(preDiscountTotal)}`;
+  const priceSummary = checkInDate
+    ? `${selectedRoom.name} / ${boundedNights}泊 / ${boundedRoomCount}部屋 / ${boundedGuests}名 / ${mealLabel(
+        wantsBreakfast,
+        wantsDinner,
+        breakfastServiceCount,
+        dinnerServiceCount
+      )} / 宿代30%オフ ${yen.format(lodgingDiscount)}引き / 割引前合計 ${yen.format(preDiscountTotal)}`
+    : "日程を選択すると料金が表示されます。";
   const breakfastLabel = wantsBreakfast ? `あり（${breakfastServiceCount}回 / ${yen.format(breakfastSubtotal)}）` : "なし";
   const dinnerLabel = wantsDinner ? `あり（${dinnerServiceCount}回 / ${yen.format(dinnerSubtotal)}）` : "なし";
   const mealNotice = [
-    breakfastUnavailable ? "朝食提供日が水曜日のため、朝食は選択できません。" : "",
-    dinnerUnavailable ? "夕食提供日が水曜日のため、夕食は選択できません。" : "",
+    checkInDate && breakfastUnavailable ? "朝食提供日が水曜日のため、朝食は選択できません。" : "",
+    checkInDate && dinnerUnavailable ? "夕食提供日が水曜日のため、夕食は選択できません。" : "",
     wantsBreakfast && breakfastServiceCount < boundedNights ? `朝食は水曜日を除く${breakfastServiceCount}回分で計算します。` : "",
     wantsDinner && dinnerServiceCount < boundedNights ? `夕食は水曜日を除く${dinnerServiceCount}回分で計算します。` : ""
   ]
@@ -297,7 +301,9 @@ export default function ReservationPage() {
     (selectedAvailability.status === "full" ||
       (selectedAvailability.status === "available" && selectedAvailability.availableCount < boundedRoomCount));
   const availabilityMessage =
-    availability.state === "loading"
+    availability.state === "idle"
+      ? ""
+      : availability.state === "loading"
       ? "空室状況を確認しています。"
       : availability.state === "unavailable"
         ? "空室連携が未設定です。BONDS側で空室を確認します。"
@@ -321,6 +327,11 @@ export default function ReservationPage() {
   }, [calendarMonth]);
 
   useEffect(() => {
+    if (!checkInDate) {
+      setAvailability({ state: "idle", rooms: {} });
+      return;
+    }
+
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setAvailability((current) => ({ ...current, state: "loading" }));
@@ -775,7 +786,9 @@ export default function ReservationPage() {
             <div className="form-row">
               <span className="field-label">利用する部屋</span>
               <div className="room-choice-list" role="radiogroup" aria-label="利用する部屋" aria-busy={availability.state === "loading"}>
-                {availability.state === "loading" ? (
+                {availability.state === "idle" ? (
+                  <div className="room-choice-prompt">先に宿泊日を選択してください。</div>
+                ) : availability.state === "loading" ? (
                   <div className="room-choice-loading" role="status"><span />利用可能な部屋を読み込み中</div>
                 ) : CONFIG.rooms.map((room) => {
                   const roomAvailability = availability.rooms[room.id];

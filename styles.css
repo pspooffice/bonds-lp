@@ -744,6 +744,21 @@ h3 {
   font-weight: 800;
 }
 
+.room-choice-prompt {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  padding: 12px;
+  color: var(--muted);
+  background: #f4f4f1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .room-choice-loading span {
   width: 18px;
   height: 18px;
