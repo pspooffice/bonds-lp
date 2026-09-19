@@ -158,6 +158,7 @@ function getAvailability(checkInDate, nights) {
     checkInDate: checkInDate,
     nights: nights,
     checkedDates: requestedDates,
+    missingDates: requestedDates.filter(function(date) { return !knownDates[date]; }),
     rooms: rooms,
     updatedAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX")
   };
@@ -179,7 +180,8 @@ function calendarDateKey(value, displayValue, fallbackYear) {
     return formatIsoDate(value);
   }
 
-  const match = String(displayValue || "").match(/^(\d{1,2})\/(\d{1,2})$/);
+  // Imported cells may contain a weekday and date on separate lines, such as "日\n9/6".
+  const match = String(displayValue || "").match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
   if (!match) return "";
   return [fallbackYear, String(match[1]).padStart(2, "0"), String(match[2]).padStart(2, "0")].join("-");
 }

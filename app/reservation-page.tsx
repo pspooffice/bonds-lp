@@ -21,6 +21,7 @@ type AvailabilityRoom = { status: AvailabilityStatus; availableCount: number };
 type AvailabilityState = {
   state: "loading" | "ready" | "unavailable" | "error";
   rooms: Record<string, AvailabilityRoom>;
+  missingDates?: string[];
 };
 
 const CONFIG = {
@@ -240,11 +241,17 @@ export default function ReservationPage() {
   const availabilityMessage =
     availability.state === "loading"
       ? "空室状況を確認しています。"
-      : selectedRoomAvailable
-        ? `${boundedNights}泊を通して${selectedAvailability.availableCount}部屋が仮予約可能です。`
-        : selectedRoomFull
-          ? `選択した日程では${boundedRoomCount}部屋を確保できません。別の日程または部屋をお選びください。`
-          : "この日程はオンラインで空室を確認できないため、BONDS側で確認します。";
+      : availability.state === "unavailable"
+        ? "空室連携が未設定です。BONDS側で空室を確認します。"
+        : availability.state === "error"
+          ? "空室情報の取得に失敗しました。BONDS側で空室を確認します。"
+          : selectedRoomAvailable
+            ? `${boundedNights}泊を通して${selectedAvailability.availableCount}部屋が仮予約可能です。`
+            : selectedRoomFull
+              ? `選択した日程では${boundedRoomCount}部屋を確保できません。別の日程または部屋をお選びください。`
+              : availability.missingDates?.length
+                ? `予約カレンダーに対象日（${availability.missingDates.join("、")}）が見つからないため、BONDS側で確認します。`
+                : "この日程はオンラインで空室を確認できないため、BONDS側で確認します。";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -262,7 +269,8 @@ export default function ReservationPage() {
         if (!response.ok) throw new Error(result.message || "空室状況を取得できませんでした。");
         setAvailability({
           state: result.configured === false ? "unavailable" : "ready",
-          rooms: result.rooms || {}
+          rooms: result.rooms || {},
+          missingDates: result.missingDates || []
         });
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
