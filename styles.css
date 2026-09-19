@@ -1065,6 +1065,17 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .room-card {
+    grid-template-rows: auto 1fr;
+  }
+
+  .room-image {
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: contain;
+    background: #fff;
+  }
+
   .food-media {
     grid-template-columns: 1fr;
   }
