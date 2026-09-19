@@ -316,9 +316,7 @@ export default function ReservationPage() {
       try {
         const params = new URLSearchParams({
           month: calendarMonth,
-          nights: String(boundedNights),
-          roomType: selectedRoom.id,
-          roomCount: String(boundedRoomCount)
+          nights: String(boundedNights)
         });
         const response = await fetch(`/api/availability?${params.toString()}`, {
           signal: controller.signal,
@@ -337,20 +335,20 @@ export default function ReservationPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [calendarMonth, boundedNights, selectedRoom.id, boundedRoomCount]);
+  }, [calendarMonth, boundedNights]);
 
   function chooseCheckInDate(date: string) {
     setCheckInDate(date);
     setCalendarMonth(date.slice(0, 7));
   }
 
-  function selectRoom(nextRoomId: string) {
+  function selectRoom(nextRoomId: string, shouldScroll = true) {
     const nextRoom = CONFIG.rooms.find((room) => room.id === nextRoomId) ?? CONFIG.rooms[0];
     const nextRoomCount = nextRoom.perRoom ? 1 : boundedRoomCount;
     setRoomId(nextRoom.id);
     setRoomCount(nextRoomCount);
     setGuests(clamp(boundedGuests, nextRoom.minGuests * nextRoomCount, nextRoom.maxGuests * nextRoomCount));
-    document.querySelector("#request")?.scrollIntoView({ behavior: "smooth" });
+    if (shouldScroll) document.querySelector("#request")?.scrollIntoView({ behavior: "smooth" });
   }
 
   function setSafeNights(value: number) {
@@ -676,7 +674,7 @@ export default function ReservationPage() {
                 <input id="phone" name="phone" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required />
               </div>
             </div>
-            <div className="form-row compact">
+            <div className="form-row compact stay-grid">
               <div>
                 <label htmlFor="date">チェックイン日</label>
                 <input id="date" name="date" type="date" min={initialDate} value={checkInDate} onChange={(event) => chooseCheckInDate(event.target.value)} required />
@@ -684,14 +682,6 @@ export default function ReservationPage() {
               <div>
                 <label htmlFor="nights">宿泊数</label>
                 <input id="nights" name="nights" type="number" min="1" max="14" value={boundedNights} onChange={(event) => setSafeNights(Number(event.target.value))} required />
-              </div>
-              <div>
-                <label htmlFor="guests">人数</label>
-                <input id="guests" name="guests" type="number" min={minGuests} max={maxGuests} value={boundedGuests} onChange={(event) => setSafeGuests(Number(event.target.value))} required />
-              </div>
-              <div>
-                <label htmlFor="roomCount">部屋数</label>
-                <input id="roomCount" name="roomCount" type="number" min="1" max={maxRooms} value={boundedRoomCount} onChange={(event) => setSafeRoomCount(Number(event.target.value))} required />
               </div>
             </div>
             <p className="checkout-note">チェックアウト予定日: {checkoutDate}</p>
@@ -705,7 +695,7 @@ export default function ReservationPage() {
                   ›
                 </button>
               </div>
-              <p className="calendar-room-name">{selectedRoom.name}・{boundedNights}泊</p>
+              <p className="calendar-room-name">{boundedNights}泊で利用できる日</p>
               <div className="calendar-weekdays" aria-hidden="true">
                 {['日', '月', '火', '水', '木', '金', '土'].map((day) => <span key={day}>{day}</span>)}
               </div>
@@ -737,29 +727,47 @@ export default function ReservationPage() {
               {calendarAvailability.state === "error" && <p className="calendar-error">空室カレンダーを取得できませんでした。</p>}
             </section>
             <div className="form-row">
-              <label htmlFor="room">部屋</label>
-              <select id="room" name="room" value={selectedRoom.id} onChange={(event) => selectRoom(event.target.value)} required>
+              <span className="field-label">利用する部屋</span>
+              <div className="room-choice-list" role="radiogroup" aria-label="利用する部屋">
                 {CONFIG.rooms.map((room) => {
                   const roomAvailability = availability.rooms[room.id];
+                  const roomFull = availability.state === "ready" && roomAvailability?.status === "full";
                   const availabilityLabel =
                     availability.state !== "ready" || !roomAvailability || roomAvailability.status === "unknown"
                       ? "要確認"
-                      : roomAvailability.availableCount > 0
-                        ? "空室あり"
-                        : "満室";
+                      : roomAvailability.availableCount > 0 ? "空室あり" : "満室";
                   return (
-                    <option value={room.id} key={room.id}>
-                      {room.name}（{availabilityLabel}）
-                    </option>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={room.id === selectedRoom.id}
+                      className={room.id === selectedRoom.id ? "selected" : ""}
+                      disabled={roomFull}
+                      onClick={() => selectRoom(room.id, false)}
+                      key={room.id}
+                    >
+                      <span><strong>{room.name}</strong><small>{room.capacity}</small></span>
+                      <em className={roomFull ? "full" : ""}>{availabilityLabel}</em>
+                    </button>
                   );
                 })}
-              </select>
+              </div>
               <p
                 className={`availability-status ${selectedRoomAvailable ? "available" : selectedRoomFull ? "full" : "unknown"}`}
                 role="status"
               >
                 {availabilityMessage}
               </p>
+            </div>
+            <div className="form-row compact guest-room-grid">
+              <div>
+                <label htmlFor="guests">人数</label>
+                <input id="guests" name="guests" type="number" min={minGuests} max={maxGuests} value={boundedGuests} onChange={(event) => setSafeGuests(Number(event.target.value))} required />
+              </div>
+              <div>
+                <label htmlFor="roomCount">部屋数</label>
+                <input id="roomCount" name="roomCount" type="number" min="1" max={maxRooms} value={boundedRoomCount} onChange={(event) => setSafeRoomCount(Number(event.target.value))} required />
+              </div>
             </div>
             <fieldset className="choice-group">
               <legend>食事の有無</legend>

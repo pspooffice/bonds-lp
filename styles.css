@@ -593,6 +593,11 @@ h3 {
   gap: 14px;
 }
 
+.form-row.compact.stay-grid,
+.form-row.compact.guest-room-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .contact-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -642,6 +647,68 @@ h3 {
 
 .availability-status.full::before {
   background: var(--coral);
+}
+
+.room-choice-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.room-choice-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px;
+  color: var(--ink);
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.room-choice-list button > span,
+.room-choice-list strong,
+.room-choice-list small {
+  display: block;
+  min-width: 0;
+}
+
+.room-choice-list strong {
+  font-size: 14px;
+}
+
+.room-choice-list small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.room-choice-list em {
+  flex: 0 0 auto;
+  color: var(--teal-dark);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.room-choice-list em.full {
+  color: var(--coral);
+}
+
+.room-choice-list button.selected {
+  background: var(--mist);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 1px var(--teal);
+}
+
+.room-choice-list button:disabled {
+  color: var(--muted);
+  background: #f4f4f1;
+  cursor: not-allowed;
 }
 
 .availability-calendar {
@@ -779,6 +846,10 @@ h3 {
 
 label,
 legend {
+  font-weight: 800;
+}
+
+.field-label {
   font-weight: 800;
 }
 
@@ -995,7 +1066,8 @@ textarea:focus {
   }
 
   .form-row.compact,
-  .choice-group {
+  .choice-group,
+  .room-choice-list {
     grid-template-columns: 1fr;
   }
 

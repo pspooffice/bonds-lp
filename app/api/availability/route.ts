@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const roomCount = Number(request.nextUrl.searchParams.get("roomCount") || 1);
   const nights = Number(request.nextUrl.searchParams.get("nights") || 1);
 
-  const calendarRequest = /^\d{4}-\d{2}$/.test(month) && roomType.length > 0;
+  const calendarRequest = /^\d{4}-\d{2}$/.test(month);
   if (
     (!calendarRequest && !/^\d{4}-\d{2}-\d{2}$/.test(checkInDate)) ||
     !Number.isInteger(nights) || nights < 1 || nights > 14 ||
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("action", calendarRequest ? "calendar" : "availability");
     if (calendarRequest) {
       url.searchParams.set("month", month);
-      url.searchParams.set("roomType", roomType);
+      if (roomType) url.searchParams.set("roomType", roomType);
       url.searchParams.set("roomCount", String(roomCount));
     } else {
       url.searchParams.set("checkInDate", checkInDate);

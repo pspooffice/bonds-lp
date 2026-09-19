@@ -32,7 +32,7 @@ function doGet(e) {
 function getCalendarAvailability(month, nights, roomType, roomCount) {
   if (!/^\d{4}-\d{2}$/.test(month || "")) throw new Error("Invalid month.");
   const roomTypes = ["twin", "double", "japanese", "four-bed", "deluxe-twin", "ocean-suite", "bonds-2"];
-  if (roomTypes.indexOf(roomType) === -1) throw new Error("Invalid room type.");
+  if (roomType && roomTypes.indexOf(roomType) === -1) throw new Error("Invalid room type.");
 
   nights = Math.max(1, Math.min(14, nights || 1));
   roomCount = Math.max(1, Math.min(6, roomCount || 1));
@@ -50,7 +50,6 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
   }
 
   const parsed = readCalendarOccupancy(datesToRead, firstDay.getFullYear());
-  const physicalRooms = parsed.occupancy[roomType] || {};
   const days = {};
 
   monthDates.forEach(function(startDateKey) {
@@ -63,15 +62,19 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
     }
 
     const complete = stayDates.every(function(date) { return parsed.knownDates[date]; });
-    const availableRooms = Object.keys(physicalRooms).filter(function(roomId) {
-      return stayDates.every(function(date) {
-        return Object.prototype.hasOwnProperty.call(physicalRooms[roomId], date) && !physicalRooms[roomId][date];
-      });
-    }).length;
+    const typesToCheck = roomType ? [roomType] : roomTypes;
+    let hasKnownRoom = false;
+    const hasAvailableRoom = typesToCheck.some(function(type) {
+      const physicalRooms = parsed.occupancy[type] || {};
+      if (Object.keys(physicalRooms).length > 0) hasKnownRoom = true;
+      return Object.keys(physicalRooms).filter(function(roomId) {
+        return stayDates.every(function(date) {
+          return Object.prototype.hasOwnProperty.call(physicalRooms[roomId], date) && !physicalRooms[roomId][date];
+        });
+      }).length >= roomCount;
+    });
 
-    days[startDateKey] = !complete || Object.keys(physicalRooms).length === 0
-      ? "unknown"
-      : availableRooms >= roomCount ? "available" : "full";
+    days[startDateKey] = !complete || !hasKnownRoom ? "unknown" : hasAvailableRoom ? "available" : "full";
   });
 
   return { ok: true, month: month, nights: nights, roomType: roomType, days: days };
