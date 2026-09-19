@@ -10,6 +10,15 @@ function doGet(e) {
       return jsonResponse({ ok: false, message: "Invalid secret." });
     }
 
+    if (params.action === "calendar") {
+      return jsonResponse(getCalendarAvailability(
+        params.month,
+        Number(params.nights || 1),
+        params.roomType,
+        Number(params.roomCount || 1)
+      ));
+    }
+
     if (params.action !== "availability") {
       return jsonResponse({ ok: true, message: "BONDS reservation sheet endpoint is running." });
     }
@@ -18,6 +27,97 @@ function doGet(e) {
   } catch (error) {
     return jsonResponse({ ok: false, message: error.message || "Failed to read availability." });
   }
+}
+
+function getCalendarAvailability(month, nights, roomType, roomCount) {
+  if (!/^\d{4}-\d{2}$/.test(month || "")) throw new Error("Invalid month.");
+  const roomTypes = ["twin", "double", "japanese", "four-bed", "deluxe-twin", "ocean-suite", "bonds-2"];
+  if (roomTypes.indexOf(roomType) === -1) throw new Error("Invalid room type.");
+
+  nights = Math.max(1, Math.min(14, nights || 1));
+  roomCount = Math.max(1, Math.min(6, roomCount || 1));
+  const parts = month.split("-").map(Number);
+  const firstDay = new Date(parts[0], parts[1] - 1, 1);
+  const lastDay = new Date(parts[0], parts[1], 0);
+  const monthDates = [];
+  const datesToRead = [];
+
+  for (let day = 1; day <= lastDay.getDate() + nights - 1; day += 1) {
+    const date = new Date(firstDay.getFullYear(), firstDay.getMonth(), day);
+    const dateKey = formatIsoDate(date);
+    datesToRead.push(dateKey);
+    if (day <= lastDay.getDate()) monthDates.push(dateKey);
+  }
+
+  const parsed = readCalendarOccupancy(datesToRead, firstDay.getFullYear());
+  const physicalRooms = parsed.occupancy[roomType] || {};
+  const days = {};
+
+  monthDates.forEach(function(startDateKey) {
+    const start = parseIsoDate(startDateKey);
+    const stayDates = [];
+    for (let offset = 0; offset < nights; offset += 1) {
+      const date = new Date(start.getTime());
+      date.setDate(start.getDate() + offset);
+      stayDates.push(formatIsoDate(date));
+    }
+
+    const complete = stayDates.every(function(date) { return parsed.knownDates[date]; });
+    const availableRooms = Object.keys(physicalRooms).filter(function(roomId) {
+      return stayDates.every(function(date) {
+        return Object.prototype.hasOwnProperty.call(physicalRooms[roomId], date) && !physicalRooms[roomId][date];
+      });
+    }).length;
+
+    days[startDateKey] = !complete || Object.keys(physicalRooms).length === 0
+      ? "unknown"
+      : availableRooms >= roomCount ? "available" : "full";
+  });
+
+  return { ok: true, month: month, nights: nights, roomType: roomType, days: days };
+}
+
+function readCalendarOccupancy(requestedDates, requestedYear) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CALENDAR_SHEET_NAME);
+  if (!sheet) throw new Error("予約カレンダータブが見つかりません。");
+
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  const displayValues = range.getDisplayValues();
+  const occupancy = {};
+  const knownDates = {};
+
+  for (let row = 0; row < values.length; row += 1) {
+    if (String(displayValues[row][1] || "").trim() !== "客室") continue;
+    const dateColumns = {};
+
+    for (let column = 2; column < values[row].length; column += 1) {
+      const dateKey = calendarDateKey(values[row][column], displayValues[row][column], requestedYear);
+      if (dateKey && requestedDates.indexOf(dateKey) !== -1) {
+        dateColumns[column] = dateKey;
+        knownDates[dateKey] = true;
+      }
+    }
+
+    if (Object.keys(dateColumns).length === 0) continue;
+    for (let roomRow = row + 1; roomRow < values.length; roomRow += 1) {
+      const label = String(displayValues[roomRow][1] || "").trim();
+      if (!label || label === "客室" || label === "予約者数") break;
+      const type = roomTypeFromLabel(label);
+      if (!type) continue;
+      const roomNumber = String(displayValues[roomRow][0] || label).trim();
+      const physicalRoomId = roomNumber + ":" + label;
+      occupancy[type] = occupancy[type] || {};
+      occupancy[type][physicalRoomId] = occupancy[type][physicalRoomId] || {};
+
+      Object.keys(dateColumns).forEach(function(columnText) {
+        const column = Number(columnText);
+        occupancy[type][physicalRoomId][dateColumns[column]] = String(displayValues[roomRow][column] || "").trim() !== "";
+      });
+    }
+  }
+
+  return { occupancy: occupancy, knownDates: knownDates };
 }
 
 function doPost(e) {

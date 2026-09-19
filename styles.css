@@ -644,6 +644,139 @@ h3 {
   background: var(--coral);
 }
 
+.availability-calendar {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  text-align: center;
+}
+
+.calendar-header button {
+  width: 40px;
+  height: 40px;
+  color: var(--teal-dark);
+  background: var(--mist);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.calendar-room-name {
+  margin: -4px 0 2px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendar-weekdays span {
+  padding: 4px 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.calendar-grid {
+  transition: opacity 160ms ease;
+}
+
+.calendar-grid.loading {
+  opacity: 0.45;
+}
+
+.calendar-grid button,
+.calendar-empty {
+  aspect-ratio: 1;
+  min-width: 0;
+}
+
+.calendar-grid button {
+  display: grid;
+  place-content: center;
+  gap: 1px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.calendar-grid button span {
+  font-size: 12px;
+}
+
+.calendar-grid button strong {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.calendar-grid button.available strong {
+  color: var(--teal);
+}
+
+.calendar-grid button.full {
+  color: var(--muted);
+  background: #f4f4f1;
+  cursor: not-allowed;
+}
+
+.calendar-grid button.full strong {
+  color: var(--coral);
+}
+
+.calendar-grid button.selected {
+  color: #fff;
+  background: var(--teal-dark);
+  border-color: var(--teal-dark);
+  box-shadow: 0 0 0 2px rgba(11, 111, 112, 0.2);
+}
+
+.calendar-grid button.selected strong {
+  color: #fff;
+}
+
+.calendar-grid button:disabled:not(.full) {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.calendar-error {
+  margin: 0;
+  color: var(--coral);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 label,
 legend {
   font-weight: 800;
@@ -864,5 +997,15 @@ textarea:focus {
   .form-row.compact,
   .choice-group {
     grid-template-columns: 1fr;
+  }
+
+  .availability-calendar {
+    margin-inline: -8px;
+    padding: 12px 8px;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    gap: 3px;
   }
 }

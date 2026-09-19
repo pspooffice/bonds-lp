@@ -23,6 +23,10 @@ type AvailabilityState = {
   rooms: Record<string, AvailabilityRoom>;
   missingDates?: string[];
 };
+type CalendarState = {
+  state: "loading" | "ready" | "error";
+  days: Record<string, AvailabilityStatus>;
+};
 
 const CONFIG = {
   emailTo: "tamura_n@3puku.co.jp",
@@ -141,6 +145,15 @@ function todayString() {
   return formatDate(now);
 }
 
+function monthString(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function shiftMonth(value: string, amount: number) {
+  const [year, month] = value.split("-").map(Number);
+  return monthString(new Date(year, month - 1 + amount, 1));
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
@@ -187,6 +200,8 @@ export default function ReservationPage() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
   const [availability, setAvailability] = useState<AvailabilityState>({ state: "loading", rooms: {} });
+  const [calendarMonth, setCalendarMonth] = useState(() => initialDate.slice(0, 7));
+  const [calendarAvailability, setCalendarAvailability] = useState<CalendarState>({ state: "loading", days: {} });
 
   const selectedRoom = CONFIG.rooms.find((room) => room.id === roomId) ?? CONFIG.rooms[0];
   const boundedNights = clamp(nights || 1, 1, 14);
@@ -246,12 +261,21 @@ export default function ReservationPage() {
         : availability.state === "error"
           ? "空室情報の取得に失敗しました。BONDS側で空室を確認します。"
           : selectedRoomAvailable
-            ? `${boundedNights}泊を通して${selectedAvailability.availableCount}部屋が仮予約可能です。`
+            ? `${boundedNights}泊の仮予約が可能です。`
             : selectedRoomFull
               ? `選択した日程では${boundedRoomCount}部屋を確保できません。別の日程または部屋をお選びください。`
               : availability.missingDates?.length
                 ? `予約カレンダーに対象日（${availability.missingDates.join("、")}）が見つからないため、BONDS側で確認します。`
                 : "この日程はオンラインで空室を確認できないため、BONDS側で確認します。";
+  const calendarDays = useMemo(() => {
+    const [year, month] = calendarMonth.split("-").map(Number);
+    const firstDay = new Date(year, month - 1, 1);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    return [
+      ...Array.from({ length: firstDay.getDay() }, () => null),
+      ...Array.from({ length: daysInMonth }, (_, index) => formatDate(new Date(year, month - 1, index + 1)))
+    ];
+  }, [calendarMonth]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -283,6 +307,42 @@ export default function ReservationPage() {
       controller.abort();
     };
   }, [checkInDate, boundedNights]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setCalendarAvailability((current) => ({ ...current, state: "loading" }));
+
+      try {
+        const params = new URLSearchParams({
+          month: calendarMonth,
+          nights: String(boundedNights),
+          roomType: selectedRoom.id,
+          roomCount: String(boundedRoomCount)
+        });
+        const response = await fetch(`/api/availability?${params.toString()}`, {
+          signal: controller.signal,
+          cache: "no-store"
+        });
+        const result = await response.json();
+        if (!response.ok || result.configured === false) throw new Error(result.message || "空室カレンダーを取得できませんでした。");
+        setCalendarAvailability({ state: "ready", days: result.days || {} });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setCalendarAvailability({ state: "error", days: {} });
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [calendarMonth, boundedNights, selectedRoom.id, boundedRoomCount]);
+
+  function chooseCheckInDate(date: string) {
+    setCheckInDate(date);
+    setCalendarMonth(date.slice(0, 7));
+  }
 
   function selectRoom(nextRoomId: string) {
     const nextRoom = CONFIG.rooms.find((room) => room.id === nextRoomId) ?? CONFIG.rooms[0];
@@ -619,7 +679,7 @@ export default function ReservationPage() {
             <div className="form-row compact">
               <div>
                 <label htmlFor="date">チェックイン日</label>
-                <input id="date" name="date" type="date" min={initialDate} value={checkInDate} onChange={(event) => setCheckInDate(event.target.value)} required />
+                <input id="date" name="date" type="date" min={initialDate} value={checkInDate} onChange={(event) => chooseCheckInDate(event.target.value)} required />
               </div>
               <div>
                 <label htmlFor="nights">宿泊数</label>
@@ -635,6 +695,47 @@ export default function ReservationPage() {
               </div>
             </div>
             <p className="checkout-note">チェックアウト予定日: {checkoutDate}</p>
+            <section className="availability-calendar" aria-label="空室カレンダー">
+              <div className="calendar-header">
+                <button type="button" onClick={() => setCalendarMonth(shiftMonth(calendarMonth, -1))} aria-label="前の月">
+                  ‹
+                </button>
+                <strong>{calendarMonth.replace("-", "年")}月</strong>
+                <button type="button" onClick={() => setCalendarMonth(shiftMonth(calendarMonth, 1))} aria-label="次の月">
+                  ›
+                </button>
+              </div>
+              <p className="calendar-room-name">{selectedRoom.name}・{boundedNights}泊</p>
+              <div className="calendar-weekdays" aria-hidden="true">
+                {['日', '月', '火', '水', '木', '金', '土'].map((day) => <span key={day}>{day}</span>)}
+              </div>
+              <div className={`calendar-grid ${calendarAvailability.state === "loading" ? "loading" : ""}`}>
+                {calendarDays.map((date, index) => {
+                  if (!date) return <span className="calendar-empty" key={`empty-${index}`} />;
+                  const status = calendarAvailability.days[date] || "unknown";
+                  const isPast = date < initialDate;
+                  const selectable = !isPast && status !== "full";
+                  const mark = status === "available" ? "○" : status === "full" ? "×" : "―";
+                  return (
+                    <button
+                      type="button"
+                      className={`${status} ${date === checkInDate ? "selected" : ""}`}
+                      key={date}
+                      disabled={!selectable}
+                      onClick={() => chooseCheckInDate(date)}
+                      aria-label={`${date} ${status === "available" ? "空室あり" : status === "full" ? "満室" : "要確認"}`}
+                    >
+                      <span>{Number(date.slice(-2))}</span>
+                      <strong>{isPast ? "" : mark}</strong>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="calendar-legend">
+                <span>○ 空室あり</span><span>× 満室</span><span>― 要確認</span>
+              </div>
+              {calendarAvailability.state === "error" && <p className="calendar-error">空室カレンダーを取得できませんでした。</p>}
+            </section>
             <div className="form-row">
               <label htmlFor="room">部屋</label>
               <select id="room" name="room" value={selectedRoom.id} onChange={(event) => selectRoom(event.target.value)} required>
@@ -644,7 +745,7 @@ export default function ReservationPage() {
                     availability.state !== "ready" || !roomAvailability || roomAvailability.status === "unknown"
                       ? "要確認"
                       : roomAvailability.availableCount > 0
-                        ? `残り${roomAvailability.availableCount}部屋`
+                        ? "空室あり"
                         : "満室";
                   return (
                     <option value={room.id} key={room.id}>
