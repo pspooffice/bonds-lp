@@ -396,6 +396,8 @@ h3 {
 
 .room-body {
   padding: 20px;
+  color: var(--ink);
+  background: #fff;
 }
 
 .room-meta {
@@ -435,9 +437,16 @@ h3 {
 .select-room {
   width: 100%;
   margin-top: 16px;
-  color: var(--teal-dark);
-  background: #fff;
-  border: 1px solid var(--teal);
+  color: #fff;
+  background: var(--teal-dark);
+  border: 1px solid var(--teal-dark);
+  box-shadow: 0 8px 20px rgba(6, 73, 74, 0.2);
+}
+
+.select-room:hover,
+.select-room:focus-visible {
+  color: #fff;
+  background: var(--teal);
 }
 
 .split {

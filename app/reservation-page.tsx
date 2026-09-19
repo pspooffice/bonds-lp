@@ -235,9 +235,9 @@ function calculateRoomSubtotal(room: Room, guests: number, roomCount: number, ni
   return subtotal;
 }
 
-function startingPrice(room: Room) {
-  if (room.perRoom || !room.priceGroup) return room.basePrice;
-  return LODGING_RATES[room.priceGroup].regular.shared;
+function memberStartingPrice(room: Room) {
+  const regularPrice = room.perRoom || !room.priceGroup ? room.basePrice : LODGING_RATES[room.priceGroup].regular.shared;
+  return Math.round(regularPrice * (1 - CONFIG.lodgingDiscountPercent / 100));
 }
 
 function serviceCount(checkInDate: string, nights: number, service: "breakfast" | "dinner") {
@@ -704,8 +704,8 @@ export default function ReservationPage() {
                   <h3>{room.name}</h3>
                   <p>{room.description}</p>
                   <div className="room-price">
-                    <small>{room.perRoom ? "通常料金・1棟" : "通常料金・1名1泊"}</small>
-                    <strong>{number.format(startingPrice(room))}円〜</strong>
+                    <small>{room.perRoom ? "PSPO会員価格・1棟" : "PSPO会員価格・1名1泊"}</small>
+                    <strong>{number.format(memberStartingPrice(room))}円〜</strong>
                   </div>
                   <button className="button select-room" type="button" onClick={() => selectRoom(room.id)}>
                     この部屋を選ぶ
