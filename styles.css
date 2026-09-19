@@ -609,6 +609,41 @@ h3 {
   font-weight: 800;
 }
 
+.availability-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.availability-status::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sun);
+}
+
+.availability-status.available {
+  color: var(--teal-dark);
+}
+
+.availability-status.available::before {
+  background: var(--teal);
+}
+
+.availability-status.full {
+  color: var(--coral);
+}
+
+.availability-status.full::before {
+  background: var(--coral);
+}
+
 label,
 legend {
   font-weight: 800;

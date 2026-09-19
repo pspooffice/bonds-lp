@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Room = {
   id: string;
@@ -16,6 +16,12 @@ type Room = {
 };
 
 type SubmitState = "idle" | "sending" | "sent" | "fallback" | "error";
+type AvailabilityStatus = "available" | "full" | "unknown";
+type AvailabilityRoom = { status: AvailabilityStatus; availableCount: number };
+type AvailabilityState = {
+  state: "loading" | "ready" | "unavailable" | "error";
+  rooms: Record<string, AvailabilityRoom>;
+};
 
 const CONFIG = {
   emailTo: "tamura_n@3puku.co.jp",
@@ -179,6 +185,7 @@ export default function ReservationPage() {
   const [message, setMessage] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+  const [availability, setAvailability] = useState<AvailabilityState>({ state: "loading", rooms: {} });
 
   const selectedRoom = CONFIG.rooms.find((room) => room.id === roomId) ?? CONFIG.rooms[0];
   const boundedNights = clamp(nights || 1, 1, 14);
@@ -220,6 +227,54 @@ export default function ReservationPage() {
   ]
     .filter(Boolean)
     .join(" ");
+  const selectedAvailability = availability.rooms[selectedRoom.id];
+  const selectedRoomAvailable =
+    availability.state === "ready" &&
+    selectedAvailability?.status === "available" &&
+    selectedAvailability.availableCount >= boundedRoomCount;
+  const selectedRoomFull =
+    availability.state === "ready" &&
+    selectedAvailability &&
+    (selectedAvailability.status === "full" ||
+      (selectedAvailability.status === "available" && selectedAvailability.availableCount < boundedRoomCount));
+  const availabilityMessage =
+    availability.state === "loading"
+      ? "空室状況を確認しています。"
+      : selectedRoomAvailable
+        ? `${boundedNights}泊を通して${selectedAvailability.availableCount}部屋が仮予約可能です。`
+        : selectedRoomFull
+          ? `選択した日程では${boundedRoomCount}部屋を確保できません。別の日程または部屋をお選びください。`
+          : "この日程はオンラインで空室を確認できないため、BONDS側で確認します。";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setAvailability((current) => ({ ...current, state: "loading" }));
+
+      try {
+        const params = new URLSearchParams({ checkInDate, nights: String(boundedNights) });
+        const response = await fetch(`/api/availability?${params.toString()}`, {
+          signal: controller.signal,
+          cache: "no-store"
+        });
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.message || "空室状況を取得できませんでした。");
+        setAvailability({
+          state: result.configured === false ? "unavailable" : "ready",
+          rooms: result.rooms || {}
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setAvailability({ state: "error", rooms: {} });
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [checkInDate, boundedNights]);
 
   function selectRoom(nextRoomId: string) {
     const nextRoom = CONFIG.rooms.find((room) => room.id === nextRoomId) ?? CONFIG.rooms[0];
@@ -575,12 +630,27 @@ export default function ReservationPage() {
             <div className="form-row">
               <label htmlFor="room">部屋</label>
               <select id="room" name="room" value={selectedRoom.id} onChange={(event) => selectRoom(event.target.value)} required>
-                {CONFIG.rooms.map((room) => (
-                  <option value={room.id} key={room.id}>
-                    {room.name}
-                  </option>
-                ))}
+                {CONFIG.rooms.map((room) => {
+                  const roomAvailability = availability.rooms[room.id];
+                  const availabilityLabel =
+                    availability.state !== "ready" || !roomAvailability || roomAvailability.status === "unknown"
+                      ? "要確認"
+                      : roomAvailability.availableCount > 0
+                        ? `残り${roomAvailability.availableCount}部屋`
+                        : "満室";
+                  return (
+                    <option value={room.id} key={room.id}>
+                      {room.name}（{availabilityLabel}）
+                    </option>
+                  );
+                })}
               </select>
+              <p
+                className={`availability-status ${selectedRoomAvailable ? "available" : selectedRoomFull ? "full" : "unknown"}`}
+                role="status"
+              >
+                {availabilityMessage}
+              </p>
             </div>
             <fieldset className="choice-group">
               <legend>食事の有無</legend>
@@ -624,7 +694,7 @@ export default function ReservationPage() {
             <p className={`form-alert ${submitState === "sent" ? "success" : ""}`} role="status">
               {mealNotice || submitMessage}
             </p>
-            <button className="button primary submit-button" type="submit" disabled={submitState === "sending"}>
+            <button className="button primary submit-button" type="submit" disabled={submitState === "sending" || Boolean(selectedRoomFull)}>
               {submitState === "sending" ? "送信中" : "仮予約を送信"}
             </button>
             <p className="sub-note">この送信は予約確定ではありません。食事担当の有無、空室、料金条件を確認後に確定します。</p>
