@@ -135,6 +135,8 @@ const yen = new Intl.NumberFormat("ja-JP", {
   maximumFractionDigits: 0
 });
 
+const number = new Intl.NumberFormat("ja-JP");
+
 function formatDate(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -702,8 +704,8 @@ export default function ReservationPage() {
                   <h3>{room.name}</h3>
                   <p>{room.description}</p>
                   <div className="room-price">
-                    <small>{room.perRoom ? "1棟税込" : "通常料金・1名1泊〜"}</small>
-                    <strong>{yen.format(startingPrice(room))}</strong>
+                    <small>{room.perRoom ? "通常料金・1棟" : "通常料金・1名1泊"}</small>
+                    <strong>{number.format(startingPrice(room))}円〜</strong>
                   </div>
                   <button className="button select-room" type="button" onClick={() => selectRoom(room.id)}>
                     この部屋を選ぶ
