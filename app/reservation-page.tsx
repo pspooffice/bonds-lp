@@ -177,41 +177,8 @@ function isUnavailableWeekday(date: Date) {
   return CONFIG.mealUnavailableWeekdays.includes(date.getDay());
 }
 
-function nthMonday(year: number, month: number, nth: number) {
-  const first = new Date(year, month, 1);
-  return 1 + ((8 - first.getDay()) % 7) + (nth - 1) * 7;
-}
-
-function japaneseHolidays(year: number) {
-  const springEquinox = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
-  const autumnEquinox = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
-  const holidays = new Set([
-    `${year}-01-01`, `${year}-01-${String(nthMonday(year, 0, 2)).padStart(2, "0")}`,
-    `${year}-02-11`, `${year}-02-23`, `${year}-03-${String(springEquinox).padStart(2, "0")}`,
-    `${year}-04-29`, `${year}-05-03`, `${year}-05-04`, `${year}-05-05`,
-    `${year}-07-${String(nthMonday(year, 6, 3)).padStart(2, "0")}`, `${year}-08-11`,
-    `${year}-09-${String(nthMonday(year, 8, 3)).padStart(2, "0")}`, `${year}-09-${String(autumnEquinox).padStart(2, "0")}`,
-    `${year}-10-${String(nthMonday(year, 9, 2)).padStart(2, "0")}`, `${year}-11-03`, `${year}-11-23`
-  ]);
-
-  Array.from(holidays).forEach((holiday) => {
-    const date = parseLocalDate(holiday);
-    if (date.getDay() !== 0) return;
-    do date.setDate(date.getDate() + 1); while (holidays.has(formatDate(date)));
-    holidays.add(formatDate(date));
-  });
-
-  for (let date = new Date(year, 0, 2); date.getFullYear() === year; date.setDate(date.getDate() + 1)) {
-    if (holidays.has(formatDate(addDays(date, -1))) && holidays.has(formatDate(addDays(date, 1)))) {
-      holidays.add(formatDate(date));
-    }
-  }
-
-  return holidays;
-}
-
 function isPremiumDate(date: Date) {
-  return date.getDay() === 0 || date.getDay() === 6 || japaneseHolidays(date.getFullYear()).has(formatDate(date));
+  return date.getDay() === 6;
 }
 
 function calculateRoomSubtotal(room: Room, guests: number, roomCount: number, nights: number, checkInDate: string) {
@@ -690,7 +657,7 @@ export default function ReservationPage() {
               <p className="eyebrow">Guest rooms</p>
               <h2>お部屋を選ぶ</h2>
             </div>
-            <p>通常宿泊料は利用人数と宿泊日で変わります。土曜・日曜・祝日は土曜料金、宿代はPSPO会員価格として30%オフです。</p>
+            <p>通常宿泊料は利用人数と宿泊日で変わります。土曜日のみ土曜料金、日曜・祝日は平日料金です。宿代はPSPO会員価格として30%オフになります。</p>
           </div>
           <div className="room-grid" aria-live="polite">
             {CONFIG.rooms.map((room) => (
