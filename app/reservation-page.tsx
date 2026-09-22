@@ -235,7 +235,7 @@ export default function ReservationPage() {
   const [roomCount, setRoomCount] = useState(1);
   const [roomId, setRoomId] = useState(CONFIG.rooms[0].id);
   const [breakfast, setBreakfast] = useState(false);
-  const [dinner, setDinner] = useState(false);
+  const [dinnerCount, setDinnerCount] = useState(0);
   const [message, setMessage] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
@@ -252,11 +252,12 @@ export default function ReservationPage() {
   const boundedGuests = clamp(guests || minGuests, minGuests, maxGuests);
   const checkoutDate = checkInDate ? formatDate(addDays(parseLocalDate(checkInDate), boundedNights)) : "";
   const breakfastServiceCount = serviceCount(checkInDate, boundedNights, "breakfast");
-  const dinnerServiceCount = serviceCount(checkInDate, boundedNights, "dinner");
+  const availableDinnerCount = serviceCount(checkInDate, boundedNights, "dinner");
+  const dinnerServiceCount = clamp(dinnerCount, 0, availableDinnerCount);
   const breakfastUnavailable = !checkInDate || breakfastServiceCount === 0;
-  const dinnerUnavailable = !checkInDate || dinnerServiceCount === 0;
+  const dinnerUnavailable = !checkInDate || availableDinnerCount === 0;
   const wantsBreakfast = breakfast && !breakfastUnavailable;
-  const wantsDinner = dinner && !dinnerUnavailable;
+  const wantsDinner = dinnerServiceCount > 0 && !dinnerUnavailable;
   const roomSubtotal = checkInDate
     ? calculateRoomSubtotal(selectedRoom, boundedGuests, boundedRoomCount, boundedNights, checkInDate)
     : 0;
@@ -281,7 +282,7 @@ export default function ReservationPage() {
     checkInDate && breakfastUnavailable ? "この日程では朝食を選択できません。" : "",
     checkInDate && dinnerUnavailable ? "夕食提供日が水曜日のため、夕食は選択できません。" : "",
     wantsBreakfast && breakfastServiceCount < boundedNights ? `朝食は水曜日を除く${breakfastServiceCount}回分で計算します。` : "",
-    wantsDinner && dinnerServiceCount < boundedNights ? `夕食は水曜日を除く${dinnerServiceCount}回分で計算します。` : ""
+    ""
   ]
     .filter(Boolean)
     .join(" ");
@@ -320,6 +321,10 @@ export default function ReservationPage() {
       ...Array.from({ length: daysInMonth }, (_, index) => formatDate(new Date(year, month - 1, index + 1)))
     ];
   }, [calendarMonth]);
+
+  useEffect(() => {
+    setDinnerCount((current) => clamp(current, 0, availableDinnerCount));
+  }, [availableDinnerCount]);
 
   useEffect(() => {
     if (!checkInDate) {
@@ -446,6 +451,7 @@ export default function ReservationPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitState === "sent") return;
     setSubmitState("sending");
     setSubmitMessage("");
 
@@ -710,6 +716,7 @@ export default function ReservationPage() {
           </div>
 
           <form className="request-form" id="reservationForm" onSubmit={handleSubmit}>
+            <fieldset className="form-fields" disabled={submitState === "sent"}>
             <div className="form-row">
               <label htmlFor="name">氏名</label>
               <input id="name" name="name" type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required />
@@ -844,16 +851,29 @@ export default function ReservationPage() {
                 />
                 <span>朝食あり{breakfastServiceCount > 0 ? `（${breakfastServiceCount}回）` : ""}</span>
               </label>
-              <label className={dinnerUnavailable ? "disabled" : ""}>
-                <input
-                  type="checkbox"
-                  name="dinner"
-                  checked={wantsDinner}
-                  disabled={dinnerUnavailable}
-                  onChange={(event) => setDinner(event.target.checked)}
-                />
-                <span>夕食あり{dinnerServiceCount > 0 ? `（${dinnerServiceCount}回）` : ""}</span>
-              </label>
+              <div className={`meal-option ${dinnerUnavailable ? "disabled" : ""}`}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="dinner"
+                    checked={wantsDinner}
+                    disabled={dinnerUnavailable}
+                    onChange={(event) => setDinnerCount(event.target.checked ? 1 : 0)}
+                  />
+                  <span>夕食あり</span>
+                </label>
+                {wantsDinner && (
+                  <select
+                    aria-label="夕食の回数"
+                    value={dinnerServiceCount}
+                    onChange={(event) => setDinnerCount(Number(event.target.value))}
+                  >
+                    {Array.from({ length: availableDinnerCount }, (_, index) => index + 1).map((count) => (
+                      <option value={count} key={count}>{count}回</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </fieldset>
             <div className="price-box mobile-price" aria-live="polite">
               <span>PSPO会員特別価格</span>
@@ -871,11 +891,12 @@ export default function ReservationPage() {
                 onChange={(event) => setMessage(event.target.value)}
               />
             </div>
+            </fieldset>
             <p className={`form-alert ${submitState === "sent" ? "success" : ""}`} role="status">
-              {mealNotice || submitMessage}
+              {submitMessage || mealNotice}
             </p>
-            <button className="button primary submit-button" type="submit" disabled={submitState === "sending" || Boolean(selectedRoomFull)}>
-              {submitState === "sending" ? "送信中" : "仮予約を送信"}
+            <button className="button primary submit-button" type="submit" disabled={submitState === "sending" || submitState === "sent" || Boolean(selectedRoomFull)}>
+              {submitState === "sending" ? "送信中" : submitState === "sent" ? "送信済み" : "仮予約を送信"}
             </button>
             <p className="sub-note">この送信は予約確定ではありません。食事担当の有無、空室、料金条件を確認後に確定します。</p>
           </form>

@@ -604,6 +604,10 @@ h3 {
   padding: clamp(20px, 4vw, 34px);
 }
 
+.form-fields {
+  display: contents;
+}
+
 .form-row {
   display: grid;
   gap: 8px;
@@ -997,7 +1001,8 @@ textarea:focus {
   margin-bottom: 8px;
 }
 
-.choice-group label {
+.choice-group > label,
+.meal-option {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1008,10 +1013,26 @@ textarea:focus {
   cursor: pointer;
 }
 
-.choice-group label.disabled {
+.choice-group > label.disabled,
+.meal-option.disabled {
   color: var(--muted);
   background: #f3f3ef;
   cursor: not-allowed;
+}
+
+.meal-option label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.meal-option select {
+  width: auto;
+  min-width: 82px;
+  min-height: 38px;
+  margin-left: auto;
+  padding: 6px 8px;
 }
 
 .choice-group input {
@@ -1032,6 +1053,12 @@ textarea:focus {
 
 .submit-button {
   width: 100%;
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
 }
 
 .footer {
