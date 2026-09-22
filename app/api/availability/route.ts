@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("nights", String(nights));
     url.searchParams.set("secret", process.env.GOOGLE_APPS_SCRIPT_SECRET || "");
 
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetch(url, { next: { revalidate: 60 } });
     const result = await response.json();
 
     if (!response.ok || result.ok === false) {

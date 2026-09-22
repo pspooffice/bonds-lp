@@ -3,6 +3,8 @@ const NOTIFICATION_EMAIL = PropertiesService.getScriptProperties().getProperty("
 const SEND_CUSTOMER_COPY = PropertiesService.getScriptProperties().getProperty("SEND_CUSTOMER_COPY") !== "false";
 const RESERVATION_SHEET_NAME = "BONDS仮予約";
 const CALENDAR_SHEET_NAME = "予約カレンダー";
+const SOURCE_SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SOURCE_SPREADSHEET_ID") || "1XFQKr20Ly31H2S2sZDTToi94xMBXRXt47xlizQNBMu0";
+const AVAILABILITY_CACHE_SECONDS = 180;
 const RESERVATION_STATUSES = ["未対応", "会員へ連絡済み", "予約確定", "キャンセル"];
 
 function doGet(e) {
@@ -90,8 +92,14 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
 }
 
 function readCalendarOccupancy(requestedDates, requestedYear) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CALENDAR_SHEET_NAME);
-  if (!sheet) throw new Error("予約カレンダータブが見つかりません。");
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "bonds-calendar-occupancy-v1";
+  const cached = cache.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const source = SpreadsheetApp.openById(SOURCE_SPREADSHEET_ID);
+  const sheet = source.getSheetByName(CALENDAR_SHEET_NAME);
+  if (!sheet) throw new Error("BONDS側の予約カレンダータブが見つかりません。");
 
   const range = sheet.getDataRange();
   const values = range.getValues();
@@ -105,7 +113,7 @@ function readCalendarOccupancy(requestedDates, requestedYear) {
 
     for (let column = 2; column < values[row].length; column += 1) {
       const dateKey = calendarDateKey(values[row][column], displayValues[row][column], requestedYear);
-      if (dateKey && requestedDates.indexOf(dateKey) !== -1) {
+      if (dateKey) {
         dateColumns[column] = dateKey;
         knownDates[dateKey] = true;
       }
@@ -129,7 +137,13 @@ function readCalendarOccupancy(requestedDates, requestedYear) {
     }
   }
 
-  return { occupancy: occupancy, knownDates: knownDates };
+  const parsed = {
+    occupancy: occupancy,
+    knownDates: knownDates,
+    updatedAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX")
+  };
+  cache.put(cacheKey, JSON.stringify(parsed), AVAILABILITY_CACHE_SECONDS);
+  return parsed;
 }
 
 function doPost(e) {
@@ -224,6 +238,11 @@ function authorizeMail() {
   return MailApp.getRemainingDailyQuota();
 }
 
+function refreshAvailabilityCache() {
+  CacheService.getScriptCache().remove("bonds-calendar-occupancy-v1");
+  return readCalendarOccupancy([], 2026).updatedAt;
+}
+
 function sendReservationEmails(payload) {
   if (!NOTIFICATION_EMAIL) return false;
 
@@ -286,12 +305,6 @@ function getAvailability(checkInDate, nights) {
   }
 
   nights = Math.max(1, Math.min(14, nights || 1));
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CALENDAR_SHEET_NAME);
-  if (!sheet) throw new Error("予約カレンダータブが見つかりません。");
-
-  const range = sheet.getDataRange();
-  const values = range.getValues();
-  const displayValues = range.getDisplayValues();
   const requestedDates = [];
   const start = parseIsoDate(checkInDate);
 
@@ -301,43 +314,9 @@ function getAvailability(checkInDate, nights) {
     requestedDates.push(formatIsoDate(date));
   }
 
-  const requestedYear = start.getFullYear();
-  const occupancy = {};
-  const knownDates = {};
-
-  for (let row = 0; row < values.length; row += 1) {
-    if (String(displayValues[row][1] || "").trim() !== "客室") continue;
-
-    const dateColumns = {};
-    for (let column = 2; column < values[row].length; column += 1) {
-      const dateKey = calendarDateKey(values[row][column], displayValues[row][column], requestedYear);
-      if (dateKey && requestedDates.indexOf(dateKey) !== -1) {
-        dateColumns[column] = dateKey;
-        knownDates[dateKey] = true;
-      }
-    }
-
-    if (Object.keys(dateColumns).length === 0) continue;
-
-    for (let roomRow = row + 1; roomRow < values.length; roomRow += 1) {
-      const label = String(displayValues[roomRow][1] || "").trim();
-      if (!label || label === "客室" || label === "予約者数") break;
-
-      const roomType = roomTypeFromLabel(label);
-      if (!roomType) continue;
-
-      const roomNumber = String(displayValues[roomRow][0] || label).trim();
-      const physicalRoomId = roomNumber + ":" + label;
-      occupancy[roomType] = occupancy[roomType] || {};
-      occupancy[roomType][physicalRoomId] = occupancy[roomType][physicalRoomId] || {};
-
-      Object.keys(dateColumns).forEach(function(columnText) {
-        const column = Number(columnText);
-        occupancy[roomType][physicalRoomId][dateColumns[column]] =
-          String(displayValues[roomRow][column] || "").trim() !== "";
-      });
-    }
-  }
+  const parsed = readCalendarOccupancy(requestedDates, start.getFullYear());
+  const occupancy = parsed.occupancy;
+  const knownDates = parsed.knownDates;
 
   const roomTypes = ["twin", "double", "japanese", "four-bed", "deluxe-twin", "ocean-suite", "bonds-2"];
   const calendarComplete = requestedDates.every(function(date) { return knownDates[date]; });
@@ -367,7 +346,7 @@ function getAvailability(checkInDate, nights) {
     checkedDates: requestedDates,
     missingDates: requestedDates.filter(function(date) { return !knownDates[date]; }),
     rooms: rooms,
-    updatedAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX")
+    updatedAt: parsed.updatedAt
   };
 }
 

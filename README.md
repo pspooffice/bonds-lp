@@ -42,11 +42,13 @@ BONDS仮予約      LPから送信された仮予約の保存先
 4. Apps Scriptの `プロジェクトの設定` → `スクリプト プロパティ` に `SECRET` を追加する
    `NOTIFICATION_EMAIL` にBONDS通知先メールアドレスを追加する
    `SEND_CUSTOMER_COPY` に `true` を追加する
+   `SOURCE_SPREADSHEET_ID` に `1XFQKr20Ly31H2S2sZDTToi94xMBXRXt47xlizQNBMu0` を追加する
 5. `.env.local` の `GOOGLE_APPS_SCRIPT_SECRET` に同じ値を入れる
 6. Apps Scriptの関数一覧から `setupReservationSheet` を実行し、B列のプルダウンを設定する
 7. `authorizeMail` を実行して、メール送信権限を承認する
-8. `デプロイ` → `新しいデプロイ` → `ウェブアプリ` として公開する
-9. 発行されたウェブアプリURLを `.env.local` の `GOOGLE_APPS_SCRIPT_URL` に入れる
+8. `refreshAvailabilityCache` を実行して、BONDS側予約表の読み取り権限を承認する
+9. `デプロイ` → `新しいデプロイ` → `ウェブアプリ` として公開する
+10. 発行されたウェブアプリURLを `.env.local` の `GOOGLE_APPS_SCRIPT_URL` に入れる
 
 スプレッドシートの1行目は次の順番です。
 
@@ -55,3 +57,4 @@ BONDS仮予約      LPから送信された仮予約の保存先
 ```
 
 空室確認では予約者名やセル内容を返さず、部屋タイプごとの状態と空室数だけをLPへ返します。
+空室情報はBONDS側の `2026_ボンズ予約管理` を読み取り専用で直接参照し、解析結果をApps Scriptで3分間キャッシュします。
