@@ -36,7 +36,7 @@ const CONFIG = {
   lodgingDiscountPercent: 30,
   breakfastPricePerPerson: 1650,
   dinnerPricePerPerson: 8800,
-  mealUnavailableWeekdays: [3],
+  dinnerUnavailableWeekdays: [3],
   rooms: [
     {
       id: "twin",
@@ -169,8 +169,8 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function isUnavailableWeekday(date: Date) {
-  return CONFIG.mealUnavailableWeekdays.includes(date.getDay());
+function isUnavailableWeekday(date: Date, service: "breakfast" | "dinner") {
+  return service === "dinner" && CONFIG.dinnerUnavailableWeekdays.includes(date.getDay());
 }
 
 function isPremiumDate(date: Date) {
@@ -212,7 +212,7 @@ function serviceCount(checkInDate: string, nights: number, service: "breakfast" 
 
   for (let offset = firstOffset; offset <= lastOffset; offset += 1) {
     const serviceDate = addDays(start, offset);
-    if (!isUnavailableWeekday(serviceDate)) available += 1;
+    if (!isUnavailableWeekday(serviceDate, service)) available += 1;
   }
 
   return available;
@@ -278,7 +278,7 @@ export default function ReservationPage() {
   const breakfastLabel = wantsBreakfast ? `あり（${breakfastServiceCount}回 / ${yen.format(breakfastSubtotal)}）` : "なし";
   const dinnerLabel = wantsDinner ? `あり（${dinnerServiceCount}回 / ${yen.format(dinnerSubtotal)}）` : "なし";
   const mealNotice = [
-    checkInDate && breakfastUnavailable ? "朝食提供日が水曜日のため、朝食は選択できません。" : "",
+    checkInDate && breakfastUnavailable ? "この日程では朝食を選択できません。" : "",
     checkInDate && dinnerUnavailable ? "夕食提供日が水曜日のため、夕食は選択できません。" : "",
     wantsBreakfast && breakfastServiceCount < boundedNights ? `朝食は水曜日を除く${breakfastServiceCount}回分で計算します。` : "",
     wantsDinner && dinnerServiceCount < boundedNights ? `夕食は水曜日を除く${dinnerServiceCount}回分で計算します。` : ""
@@ -645,7 +645,7 @@ export default function ReservationPage() {
               </div>
               <div>
                 <dt>水曜日</dt>
-                <dd>水曜提供分は受付なし</dd>
+                <dd>休館日（火曜宿泊者の朝食は提供）</dd>
               </div>
               <div>
                 <dt>予約</dt>

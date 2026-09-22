@@ -65,6 +65,7 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
     }
 
     const complete = stayDates.every(function(date) { return parsed.knownDates[date]; });
+    const includesClosedNight = stayDates.some(function(date) { return parseIsoDate(date).getDay() === 3; });
     const typesToCheck = roomType ? [roomType] : roomTypes;
     let hasKnownRoom = false;
     let totalAvailableRooms = 0;
@@ -78,7 +79,9 @@ function getCalendarAvailability(month, nights, roomType, roomCount) {
       }).length;
     });
 
-    days[startDateKey] = !complete || !hasKnownRoom
+    days[startDateKey] = includesClosedNight
+      ? "full"
+      : !complete || !hasKnownRoom
       ? "unknown"
       : totalAvailableRooms < roomCount ? "full" : "available";
   });
@@ -338,6 +341,7 @@ function getAvailability(checkInDate, nights) {
 
   const roomTypes = ["twin", "double", "japanese", "four-bed", "deluxe-twin", "ocean-suite", "bonds-2"];
   const calendarComplete = requestedDates.every(function(date) { return knownDates[date]; });
+  const includesClosedNight = requestedDates.some(function(date) { return parseIsoDate(date).getDay() === 3; });
   const rooms = {};
 
   roomTypes.forEach(function(roomType) {
@@ -350,7 +354,7 @@ function getAvailability(checkInDate, nights) {
 
     const totalCount = Object.keys(physicalRooms).length;
     rooms[roomType] = {
-      status: !calendarComplete || totalCount === 0 ? "unknown" : availableCount === 0 ? "full" : "available",
+      status: includesClosedNight ? "full" : !calendarComplete || totalCount === 0 ? "unknown" : availableCount === 0 ? "full" : "available",
       availableCount: availableCount,
       totalCount: totalCount
     };
