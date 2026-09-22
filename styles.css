@@ -200,6 +200,18 @@ h3 {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.campaign-period {
+  width: fit-content;
+  margin: 18px 0 0;
+  padding: 9px 12px;
+  color: #fff;
+  background: rgba(6, 73, 74, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .notice-band {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -819,6 +831,11 @@ h3 {
   line-height: 1;
 }
 
+.calendar-header button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 .calendar-room-name {
   margin: -4px 0 2px;
   color: var(--muted);
@@ -963,6 +980,16 @@ textarea:focus {
   margin: 0;
   padding: 0;
   border: 0;
+}
+
+.child-note {
+  margin: -8px 0 0;
+  padding: 10px 12px;
+  color: var(--teal-dark);
+  background: var(--mist);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .choice-group legend {

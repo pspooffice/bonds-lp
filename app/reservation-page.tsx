@@ -31,6 +31,8 @@ type CalendarState = {
 
 const CONFIG = {
   emailTo: "tamura_n@3puku.co.jp",
+  campaignStart: "2026-10-01",
+  campaignEnd: "2026-12-25",
   lodgingDiscountPercent: 30,
   breakfastPricePerPerson: 1650,
   dinnerPricePerPerson: 8800,
@@ -154,12 +156,6 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
-function todayString() {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return formatDate(now);
-}
-
 function monthString(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -230,7 +226,6 @@ function mealLabel(wantsBreakfast: boolean, wantsDinner: boolean, breakfastCount
 }
 
 export default function ReservationPage() {
-  const initialDate = useMemo(() => todayString(), []);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -245,7 +240,7 @@ export default function ReservationPage() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
   const [availability, setAvailability] = useState<AvailabilityState>({ state: "idle", rooms: {} });
-  const [calendarMonth, setCalendarMonth] = useState(() => initialDate.slice(0, 7));
+  const [calendarMonth, setCalendarMonth] = useState(() => CONFIG.campaignStart.slice(0, 7));
   const [calendarAvailability, setCalendarAvailability] = useState<CalendarState>({ state: "loading", days: {} });
 
   const selectedRoom = CONFIG.rooms.find((room) => room.id === roomId) ?? CONFIG.rooms[0];
@@ -539,6 +534,7 @@ export default function ReservationPage() {
               PSPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
               予約確定ではなく、BONDS側で食事担当・空室状況を確認してからご案内します。
             </p>
+            <p className="campaign-period">キャンペーン期間：2026年10月1日〜12月25日</p>
             <div className="hero-actions">
               <a className="button primary" href="#request">
                 仮予約へ進む
@@ -731,7 +727,7 @@ export default function ReservationPage() {
             <div className="form-row compact stay-grid">
               <div>
                 <label htmlFor="date">チェックイン日</label>
-                <input id="date" name="date" type="date" min={initialDate} value={checkInDate} onChange={(event) => chooseCheckInDate(event.target.value)} required />
+                <input id="date" name="date" type="date" min={CONFIG.campaignStart} max={CONFIG.campaignEnd} value={checkInDate} onChange={(event) => chooseCheckInDate(event.target.value)} required />
               </div>
               <div>
                 <label htmlFor="nights">宿泊数</label>
@@ -741,11 +737,11 @@ export default function ReservationPage() {
             <p className="checkout-note">チェックアウト予定日: {checkoutDate}</p>
             <section className="availability-calendar" aria-label="空室カレンダー" aria-busy={calendarAvailability.state === "loading"}>
               <div className="calendar-header">
-                <button type="button" onClick={() => setCalendarMonth(shiftMonth(calendarMonth, -1))} aria-label="前の月">
+                <button type="button" disabled={calendarMonth <= CONFIG.campaignStart.slice(0, 7)} onClick={() => setCalendarMonth(shiftMonth(calendarMonth, -1))} aria-label="前の月">
                   ‹
                 </button>
                 <strong>{calendarMonth.replace("-", "年")}月</strong>
-                <button type="button" onClick={() => setCalendarMonth(shiftMonth(calendarMonth, 1))} aria-label="次の月">
+                <button type="button" disabled={calendarMonth >= CONFIG.campaignEnd.slice(0, 7)} onClick={() => setCalendarMonth(shiftMonth(calendarMonth, 1))} aria-label="次の月">
                   ›
                 </button>
               </div>
@@ -760,8 +756,8 @@ export default function ReservationPage() {
                 {calendarDays.map((date, index) => {
                   if (!date) return <span className="calendar-empty" key={`empty-${index}`} />;
                   const status = calendarAvailability.days[date] || "unknown";
-                  const isPast = date < initialDate;
-                  const selectable = !isPast && status !== "full";
+                  const isOutsideCampaign = date < CONFIG.campaignStart || date > CONFIG.campaignEnd;
+                  const selectable = !isOutsideCampaign && status !== "full";
                   const mark = status === "available" ? "○" : status === "full" ? "×" : "―";
                   return (
                     <button
@@ -773,7 +769,7 @@ export default function ReservationPage() {
                       aria-label={`${date} ${status === "available" ? "空室あり" : status === "full" ? "満室" : "要確認"}`}
                     >
                       <span>{Number(date.slice(-2))}</span>
-                      <strong>{isPast ? "" : mark}</strong>
+                      <strong>{isOutsideCampaign ? "" : mark}</strong>
                     </button>
                   );
                 })}
@@ -835,6 +831,7 @@ export default function ReservationPage() {
                 <input id="roomCount" name="roomCount" type="number" min="1" max={maxRooms} value={boundedRoomCount} onChange={(event) => setSafeRoomCount(Number(event.target.value))} required />
               </div>
             </div>
+            <p className="child-note">未就学児の添い寝は無料です。料金対象の「人数」には含めず、添い寝がある場合は備考に人数をご記入ください。</p>
             <fieldset className="choice-group">
               <legend>食事の有無</legend>
               <label className={breakfastUnavailable ? "disabled" : ""}>
@@ -869,7 +866,7 @@ export default function ReservationPage() {
                 id="message"
                 name="message"
                 rows={4}
-                placeholder="到着予定、アレルギー、候補日など"
+                placeholder="添い寝の未就学児人数、到着予定、アレルギー、候補日など"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
               />
