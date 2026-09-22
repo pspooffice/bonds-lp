@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 30;
+
 type ReservationPayload = {
   name: string;
   email: string;
@@ -45,7 +47,7 @@ async function saveToSheet(payload: ReservationPayload) {
   });
 
   if (!response.ok) {
-    throw new Error("Googleスプレッドシートへの保存に失敗しました。");
+    throw new Error(`Googleスプレッドシート連携からエラーが返りました。（${response.status}）`);
   }
 
   const result = await response.json().catch(() => ({ ok: true }));
