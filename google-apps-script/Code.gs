@@ -1,6 +1,9 @@
 const SECRET = PropertiesService.getScriptProperties().getProperty("SECRET") || "";
+const NOTIFICATION_EMAIL = PropertiesService.getScriptProperties().getProperty("NOTIFICATION_EMAIL") || "";
+const SEND_CUSTOMER_COPY = PropertiesService.getScriptProperties().getProperty("SEND_CUSTOMER_COPY") !== "false";
 const RESERVATION_SHEET_NAME = "BONDS仮予約";
 const CALENDAR_SHEET_NAME = "予約カレンダー";
+const RESERVATION_STATUSES = ["未対応", "会員へ連絡済み", "予約確定", "キャンセル"];
 
 function doGet(e) {
   try {
@@ -142,6 +145,7 @@ function doPost(e) {
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
 
+    let appendedRow = 0;
     try {
       sheet.appendRow([
         Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy/MM/dd HH:mm:ss"),
@@ -166,13 +170,27 @@ function doPost(e) {
         payload.total || 0,
         payload.message || ""
       ]);
+      appendedRow = sheet.getLastRow();
+      sheet.getRange(appendedRow, 2).setDataValidation(createStatusValidation());
     } finally {
       lock.releaseLock();
     }
 
+    let emailSent = false;
+    let emailError = "";
+    try {
+      emailSent = sendReservationEmails(payload);
+    } catch (error) {
+      emailError = error.message || "Failed to send email.";
+      console.error(emailError);
+    }
+
     return jsonResponse({
       ok: true,
-      message: "Saved."
+      saved: true,
+      emailSent: emailSent,
+      emailError: emailError,
+      message: emailSent ? "Saved and emailed." : "Saved."
     });
   } catch (error) {
     return jsonResponse({
@@ -180,6 +198,83 @@ function doPost(e) {
       message: error.message || "Failed to save."
     });
   }
+}
+
+function createStatusValidation() {
+  return SpreadsheetApp.newDataValidation()
+    .requireValueInList(RESERVATION_STATUSES, true)
+    .setAllowInvalid(false)
+    .setHelpText("対応状況を選択してください。")
+    .build();
+}
+
+function setupReservationSheet() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(RESERVATION_SHEET_NAME);
+  if (!sheet) throw new Error("BONDS仮予約タブが見つかりません。");
+  const rows = Math.max(sheet.getMaxRows() - 1, 1);
+  sheet.getRange(2, 2, rows, 1).setDataValidation(createStatusValidation());
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(2);
+}
+
+function authorizeMail() {
+  return MailApp.getRemainingDailyQuota();
+}
+
+function sendReservationEmails(payload) {
+  if (!NOTIFICATION_EMAIL) return false;
+
+  const body = reservationMailBody(payload);
+  const subject = "【THE BONDS仮予約】" + (payload.name || "お客様") + "様 " + (payload.checkInDate || "");
+  MailApp.sendEmail({
+    to: NOTIFICATION_EMAIL,
+    subject: subject,
+    body: body,
+    name: "THE BONDS PSPO仮予約"
+  });
+
+  if (SEND_CUSTOMER_COPY && payload.email) {
+    MailApp.sendEmail({
+      to: payload.email,
+      subject: "【受付完了】THE BONDS仮予約 " + (payload.checkInDate || ""),
+      body: body + "\n\nこのメールは仮予約の受付控えです。予約はまだ確定していません。後ほどBONDS担当者からご連絡します。",
+      name: "THE BONDS PSPO仮予約"
+    });
+  }
+
+  return true;
+}
+
+function reservationMailBody(payload) {
+  return [
+    "THE BONDS PSPO会員向け仮予約依頼",
+    "",
+    "※この依頼は予約確定ではありません。",
+    "",
+    "氏名: " + (payload.name || ""),
+    "メールアドレス: " + (payload.email || ""),
+    "電話番号: " + (payload.phone || ""),
+    "チェックイン日: " + (payload.checkInDate || ""),
+    "宿泊数: " + (payload.nights || "") + "泊",
+    "チェックアウト予定日: " + (payload.checkoutDate || ""),
+    "人数: " + (payload.guests || "") + "名",
+    "部屋数: " + (payload.roomCount || "") + "部屋",
+    "部屋: " + (payload.room || ""),
+    "朝食: " + (payload.breakfastLabel || "なし"),
+    "夕食: " + (payload.dinnerLabel || "なし"),
+    "宿代: " + formatYen(payload.roomSubtotal),
+    "PSPO会員割引: 宿代30%オフ（-" + formatYen(payload.lodgingDiscount) + "）",
+    "割引後宿代: " + formatYen(payload.discountedRoomSubtotal),
+    "PSPO会員特別価格: " + formatYen(payload.total),
+    "",
+    "備考:",
+    payload.message || "なし"
+  ].join("\n");
+}
+
+function formatYen(value) {
+  const amount = Number(value || 0);
+  return amount.toLocaleString("ja-JP") + "円";
 }
 
 function getAvailability(checkInDate, nights) {

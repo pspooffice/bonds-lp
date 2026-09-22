@@ -17,18 +17,13 @@ http://localhost:3000
 
 ## 送信まわり
 
-環境変数を設定すると、フォーム送信時にBONDS側メール送信とGoogleスプレッドシート保存を使えます。
+環境変数を設定すると、フォーム送信時にGoogleスプレッドシート保存とApps Scriptからのメール送信を使えます。
 
 ```text
-BONDS_NOTIFICATION_EMAIL=tamura_n@3puku.co.jp
-FROM_EMAIL=THE BONDS <onboarding@resend.dev>
-RESEND_API_KEY=
 GOOGLE_APPS_SCRIPT_URL=
 GOOGLE_APPS_SCRIPT_SECRET=
-SEND_CUSTOMER_COPY=true
 ```
 
-`RESEND_API_KEY` が未設定の場合は、メールソフトを開くフォールバックに切り替わります。
 `GOOGLE_APPS_SCRIPT_URL` が未設定の場合は、スプレッドシート保存をスキップします。
 
 ## Googleスプレッドシート保存・空室確認
@@ -45,9 +40,13 @@ BONDS仮予約      LPから送信された仮予約の保存先
 2. スプレッドシートで `拡張機能` → `Apps Script` を開く
 3. `google-apps-script/Code.gs` の内容をApps Scriptへ貼り付ける
 4. Apps Scriptの `プロジェクトの設定` → `スクリプト プロパティ` に `SECRET` を追加する
+   `NOTIFICATION_EMAIL` にBONDS通知先メールアドレスを追加する
+   `SEND_CUSTOMER_COPY` に `true` を追加する
 5. `.env.local` の `GOOGLE_APPS_SCRIPT_SECRET` に同じ値を入れる
-6. `デプロイ` → `新しいデプロイ` → `ウェブアプリ` として公開する
-7. 発行されたウェブアプリURLを `.env.local` の `GOOGLE_APPS_SCRIPT_URL` に入れる
+6. Apps Scriptの関数一覧から `setupReservationSheet` を実行し、B列のプルダウンを設定する
+7. `authorizeMail` を実行して、メール送信権限を承認する
+8. `デプロイ` → `新しいデプロイ` → `ウェブアプリ` として公開する
+9. 発行されたウェブアプリURLを `.env.local` の `GOOGLE_APPS_SCRIPT_URL` に入れる
 
 スプレッドシートの1行目は次の順番です。
 
