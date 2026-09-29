@@ -396,13 +396,12 @@ export default function ReservationPage() {
     setCalendarMonth(date.slice(0, 7));
   }
 
-  function selectRoom(nextRoomId: string, shouldScroll = true) {
+  function selectRoom(nextRoomId: string) {
     const nextRoom = CONFIG.rooms.find((room) => room.id === nextRoomId) ?? CONFIG.rooms[0];
     const nextRoomCount = nextRoom.perRoom ? 1 : boundedRoomCount;
     setRoomId(nextRoom.id);
     setRoomCount(nextRoomCount);
     setGuests(clamp(boundedGuests, nextRoom.minGuests * nextRoomCount, nextRoom.maxGuests * nextRoomCount));
-    if (shouldScroll) document.querySelector("#request")?.scrollIntoView({ behavior: "smooth" });
   }
 
   function setSafeNights(value: number) {
@@ -668,13 +667,13 @@ export default function ReservationPage() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">Guest rooms</p>
-              <h2>お部屋を選ぶ</h2>
+              <h2>お部屋一覧</h2>
             </div>
             <p>通常宿泊料は利用人数と宿泊日で変わります。土曜日のみ土曜料金、日曜・祝日は平日料金です。宿代はPSPO会員価格として30%オフになります。</p>
           </div>
           <div className="room-grid" aria-live="polite">
             {CONFIG.rooms.map((room) => (
-              <article className={`room-card ${room.id === selectedRoom.id ? "selected" : ""}`} key={room.id}>
+              <article className="room-card" key={room.id}>
                 <img className="room-image" src={room.image} alt={room.name} loading="lazy" />
                 <div className="room-body">
                   <div className="room-meta">
@@ -687,9 +686,6 @@ export default function ReservationPage() {
                     <small>{room.perRoom ? "PSPO会員価格・1棟" : "PSPO会員価格・1名1泊"}</small>
                     <strong>{number.format(memberStartingPrice(room))}円〜</strong>
                   </div>
-                  <button className="button select-room" type="button" onClick={() => selectRoom(room.id)}>
-                    この部屋を選ぶ
-                  </button>
                 </div>
               </article>
             ))}
@@ -810,7 +806,7 @@ export default function ReservationPage() {
                       aria-checked={room.id === selectedRoom.id}
                       className={room.id === selectedRoom.id ? "selected" : ""}
                       disabled={roomFull}
-                      onClick={() => selectRoom(room.id, false)}
+                      onClick={() => selectRoom(room.id)}
                       key={room.id}
                     >
                       <span><strong>{room.name}</strong><small>{room.capacity}</small></span>
