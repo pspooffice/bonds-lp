@@ -30,7 +30,7 @@ type CalendarState = {
 };
 
 const CONFIG = {
-  emailTo: "tamura_n@3puku.co.jp",
+  emailTo: "info-bonds@3puku.co.jp",
   campaignStart: "2026-10-01",
   campaignEnd: "2026-12-25",
   lodgingDiscountPercent: 30,
@@ -576,7 +576,7 @@ export default function ReservationPage() {
           </div>
           <p>
             THE BONDSは愛媛・中島の姫ヶ浜ビーチそばにあるゲストハウスです。
-            全室オーシャンビューの客室と、道後の名店監修の料理を組み合わせて、
+            多彩な客室と、道後の名店監修の料理を組み合わせて、
             PSPO会員様向けの特別価格で滞在の仮予約を受け付けます。
           </p>
         </section>

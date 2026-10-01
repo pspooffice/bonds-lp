@@ -40,7 +40,7 @@ BONDS仮予約      LPから送信された仮予約の保存先
 2. スプレッドシートで `拡張機能` → `Apps Script` を開く
 3. `google-apps-script/Code.gs` の内容をApps Scriptへ貼り付ける
 4. Apps Scriptの `プロジェクトの設定` → `スクリプト プロパティ` に `SECRET` を追加する
-   `NOTIFICATION_EMAIL` にBONDS通知先メールアドレスを追加する
+   `NOTIFICATION_EMAIL` にBONDS正式通知先 `info-bonds@3puku.co.jp` を設定する
    `SEND_CUSTOMER_COPY` に `true` を追加する
    `SOURCE_SPREADSHEET_ID` に `1XFQKr20Ly31H2S2sZDTToi94xMBXRXt47xlizQNBMu0` を追加する
 5. `.env.local` の `GOOGLE_APPS_SCRIPT_SECRET` に同じ値を入れる

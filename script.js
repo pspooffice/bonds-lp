@@ -1,5 +1,5 @@
 const CONFIG = {
-  emailTo: "tamura_n@3puku.co.jp",
+  emailTo: "info-bonds@3puku.co.jp",
   lodgingDiscountPercent: 30,
   breakfastName: "朝食",
   breakfastPricePerPerson: 1650,
