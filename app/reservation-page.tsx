@@ -649,8 +649,8 @@ export default function ReservationPage() {
                 <dd>{yen.format(CONFIG.dinnerPricePerPerson)}/名</dd>
               </div>
               <div>
-                <dt>水曜日</dt>
-                <dd>休館日（火曜宿泊者の朝食は提供）</dd>
+                <dt>休館日</dt>
+                <dd>水曜日（火曜宿泊者の朝食は提供）</dd>
               </div>
               <div>
                 <dt>予約</dt>
