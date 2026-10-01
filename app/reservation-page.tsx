@@ -692,6 +692,18 @@ export default function ReservationPage() {
           </div>
         </section>
 
+        <section className="official-site-guide" aria-labelledby="official-site-heading">
+          <h2 id="official-site-heading">BONDSをもっと知りたい方へ</h2>
+          <p>施設について詳しく知りたい方は、公式サイトもご覧ください。</p>
+          <a href="https://the-bonds.jp/" target="_blank" rel="noopener noreferrer">
+            BONDS公式サイトを見る（別タブで開きます）
+          </a>
+          <p className="official-booking-note">
+            PSPO会員特別価格でのお申し込みは、<a href="#request">このページの仮予約フォーム</a>からお願いします。
+            公式サイトからのご予約は、本キャンペーンの対象外です。
+          </p>
+        </section>
+
         <section className="reservation-section" id="request">
           <div className="reservation-copy">
             <p className="eyebrow">Temporary request</p>
