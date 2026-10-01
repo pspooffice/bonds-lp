@@ -554,18 +554,18 @@ export default function ReservationPage() {
         <section className="notice-band" aria-label="仮予約の流れ">
           <div>
             <span className="step">1</span>
-            <strong>PSPO会員価格を確認</strong>
-            <p>人数、部屋数、朝食・夕食の有無で料金を確認します。</p>
+            <strong>日程とお部屋を選ぶ</strong>
+            <p>泊まりたい日やお部屋、お食事を選んで、会員価格をチェック。</p>
           </div>
           <div>
             <span className="step">2</span>
-            <strong>仮予約を送信</strong>
-            <p>フォーム内容はBONDS側へ送信されます。</p>
+            <strong>気に入ったら仮予約</strong>
+            <p>お名前と連絡先を入力してお申し込み。この時点では、まだ予約は確定しません。</p>
           </div>
           <div>
             <span className="step">3</span>
-            <strong>やり取り後に確定</strong>
-            <p>空室と食事担当の可否を確認後、正式予約になります。</p>
+            <strong>BONDSからのご連絡で最終確認</strong>
+            <p>空室やお食事についてBONDSからご案内。内容をご確認いただいてから、予約確定です。</p>
           </div>
         </section>
 
