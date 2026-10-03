@@ -444,7 +444,7 @@ export default function ReservationPage() {
       "備考:",
       message || "なし",
       "",
-      "BONDS側で空室、食事担当、料金条件をご確認のうえ返信をお願いします。"
+      "BONDS側でご希望内容、空室、料金条件をご確認のうえ返信をお願いします。"
     ].join("\n");
   }
 
@@ -537,7 +537,7 @@ export default function ReservationPage() {
             <h1>THE BONDS</h1>
             <p className="lead">
               P・SPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
-              予約確定ではなく、BONDS側で食事担当・空室状況を確認してからご案内します。
+              予約確定ではなく、BONDS側でご希望内容・空室状況を確認してからご案内します。
             </p>
             <p className="campaign-period">キャンペーン期間：2026年10月1日〜12月25日</p>
             <div className="hero-actions">
@@ -654,7 +654,7 @@ export default function ReservationPage() {
               </div>
               <div>
                 <dt>予約</dt>
-                <dd>食事担当確認後に確定</dd>
+                <dd>ご希望内容の確認後に確定</dd>
               </div>
             </dl>
             <a className="button primary" href="#request">
@@ -906,7 +906,7 @@ export default function ReservationPage() {
             <button className="button primary submit-button" type="submit" disabled={submitState === "sending" || submitState === "sent" || Boolean(selectedRoomFull)}>
               {submitState === "sending" ? "送信中" : submitState === "sent" ? "送信済み" : "仮予約を送信"}
             </button>
-            <p className="sub-note">この送信は予約確定ではありません。食事担当の有無、空室、料金条件を確認後に確定します。</p>
+            <p className="sub-note">この送信は予約確定ではありません。ご希望内容、空室、料金条件を確認後に確定します。</p>
           </form>
         </section>
       </main>
