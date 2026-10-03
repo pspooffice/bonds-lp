@@ -252,7 +252,7 @@ function sendReservationEmails(payload) {
     to: NOTIFICATION_EMAIL,
     subject: subject,
     body: body,
-    name: "THE BONDS PSPO仮予約"
+    name: "THE BONDS P・SPO仮予約"
   });
 
   if (SEND_CUSTOMER_COPY && payload.email) {
@@ -260,7 +260,7 @@ function sendReservationEmails(payload) {
       to: payload.email,
       subject: "【受付完了】THE BONDS仮予約 " + (payload.checkInDate || ""),
       body: body + "\n\nこのメールは仮予約の受付控えです。予約はまだ確定していません。後ほどBONDS担当者からご連絡します。",
-      name: "THE BONDS PSPO仮予約"
+      name: "THE BONDS P・SPO仮予約"
     });
   }
 
@@ -269,7 +269,7 @@ function sendReservationEmails(payload) {
 
 function reservationMailBody(payload) {
   return [
-    "THE BONDS PSPO会員向け仮予約依頼",
+    "THE BONDS P・SPO会員向け仮予約依頼",
     "",
     "※この依頼は予約確定ではありません。",
     "",
@@ -285,9 +285,9 @@ function reservationMailBody(payload) {
     "朝食: " + (payload.breakfastLabel || "なし"),
     "夕食: " + (payload.dinnerLabel || "なし"),
     "宿代: " + formatYen(payload.roomSubtotal),
-    "PSPO会員割引: 宿代30%オフ（-" + formatYen(payload.lodgingDiscount) + "）",
+    "P・SPO会員割引: 宿代30%オフ（-" + formatYen(payload.lodgingDiscount) + "）",
     "割引後宿代: " + formatYen(payload.discountedRoomSubtotal),
-    "PSPO会員特別価格: " + formatYen(payload.total),
+    "P・SPO会員特別価格: " + formatYen(payload.total),
     "",
     "備考:",
     payload.message || "なし"

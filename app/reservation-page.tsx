@@ -420,7 +420,7 @@ export default function ReservationPage() {
 
   function buildMailBody() {
     return [
-      "THE BONDS PSPO会員向け仮予約依頼",
+      "THE BONDS P・SPO会員向け仮予約依頼",
       "",
       "※この依頼は予約確定ではありません。",
       "",
@@ -434,12 +434,12 @@ export default function ReservationPage() {
       `部屋数: ${boundedRoomCount}部屋`,
       `部屋: ${selectedRoom.name}`,
       `宿代: ${yen.format(roomSubtotal)}`,
-      `PSPO会員割引: 宿代30%オフ（-${yen.format(lodgingDiscount)}）`,
+      `P・SPO会員割引: 宿代30%オフ（-${yen.format(lodgingDiscount)}）`,
       `割引後宿代: ${yen.format(discountedRoomSubtotal)}`,
       `朝食: ${breakfastLabel}`,
       `夕食: ${dinnerLabel}`,
       `割引前合計: ${yen.format(preDiscountTotal)}`,
-      `PSPO会員特別価格: ${yen.format(total)}`,
+      `P・SPO会員特別価格: ${yen.format(total)}`,
       "",
       "備考:",
       message || "なし",
@@ -518,7 +518,7 @@ export default function ReservationPage() {
           <span className="brand-mark">B</span>
           <span>
             <strong>THE BONDS</strong>
-            <small>PSPO Member Stay</small>
+            <small>P・SPO Member Stay</small>
           </span>
         </a>
         <nav className="nav-links" aria-label="主要ナビゲーション">
@@ -533,10 +533,10 @@ export default function ReservationPage() {
         <section className="hero">
           <div className="hero-media" role="img" aria-label="THE BONDSの海辺の外観" />
           <div className="hero-copy">
-            <p className="eyebrow">PSPO member special stay</p>
+            <p className="eyebrow">P・SPO member special stay</p>
             <h1>THE BONDS</h1>
             <p className="lead">
-              PSPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
+              P・SPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
               予約確定ではなく、BONDS側で食事担当・空室状況を確認してからご案内します。
             </p>
             <p className="campaign-period">キャンペーン期間：2026年10月1日〜12月25日</p>
@@ -572,12 +572,12 @@ export default function ReservationPage() {
         <section className="section intro">
           <div>
             <p className="eyebrow">Island stay</p>
-            <h2>PSPO会員だけに開く、海辺の島ステイ</h2>
+            <h2>P・SPO会員だけに開く、海辺の島ステイ</h2>
           </div>
           <p>
             THE BONDSは愛媛・中島の姫ヶ浜ビーチそばにあるゲストハウスです。
             多彩な客室と、道後の名店監修の料理を組み合わせて、
-            PSPO会員様向けの特別価格で滞在の仮予約を受け付けます。
+            P・SPO会員様向けの特別価格で滞在の仮予約を受け付けます。
           </p>
         </section>
 
@@ -669,7 +669,7 @@ export default function ReservationPage() {
               <p className="eyebrow">Guest rooms</p>
               <h2>お部屋一覧</h2>
             </div>
-            <p>通常宿泊料は利用人数と宿泊日で変わります。土曜日のみ土曜料金、日曜・祝日は平日料金です。宿代はPSPO会員価格として30%オフになります。</p>
+            <p>通常宿泊料は利用人数と宿泊日で変わります。土曜日のみ土曜料金、日曜・祝日は平日料金です。宿代はP・SPO会員価格として30%オフになります。</p>
           </div>
           <div className="room-grid" aria-live="polite">
             {CONFIG.rooms.map((room) => (
@@ -683,7 +683,7 @@ export default function ReservationPage() {
                   <h3>{room.name}</h3>
                   <p>{room.description}</p>
                   <div className="room-price">
-                    <small>{room.perRoom ? "PSPO会員価格・1棟" : "PSPO会員価格・1名1泊"}</small>
+                    <small>{room.perRoom ? "P・SPO会員価格・1棟" : "P・SPO会員価格・1名1泊"}</small>
                     <strong>{number.format(memberStartingPrice(room))}円〜</strong>
                   </div>
                 </div>
@@ -699,7 +699,7 @@ export default function ReservationPage() {
             BONDS公式サイトを見る（別タブで開きます）
           </a>
           <p className="official-booking-note">
-            PSPO会員特別価格でのお申し込みは、<a href="#request">このページの仮予約フォーム</a>からお願いします。
+            P・SPO会員特別価格でのお申し込みは、<a href="#request">このページの仮予約フォーム</a>からお願いします。
             公式サイトからのご予約は、本キャンペーンの対象外です。
           </p>
         </section>
@@ -710,7 +710,7 @@ export default function ReservationPage() {
             <h2>仮予約フォーム</h2>
             <p>内容確認後、BONDS側からメールまたは電話でご連絡します。</p>
             <div className="price-box desktop-price" aria-live="polite">
-              <span>PSPO会員特別価格</span>
+              <span>P・SPO会員特別価格</span>
               <strong>{yen.format(total)}</strong>
               <small>{priceSummary}</small>
               <button
@@ -884,7 +884,7 @@ export default function ReservationPage() {
               </div>
             </fieldset>
             <div className="price-box mobile-price" aria-live="polite">
-              <span>PSPO会員特別価格</span>
+              <span>P・SPO会員特別価格</span>
               <strong>{yen.format(total)}</strong>
               <small>{priceSummary}</small>
             </div>
@@ -918,7 +918,7 @@ export default function ReservationPage() {
       </footer>
       <div className="mobile-price-bar" aria-live="polite">
         <div>
-          <span>PSPO会員特別価格</span>
+          <span>P・SPO会員特別価格</span>
           <strong>{yen.format(total)}</strong>
         </div>
         <button

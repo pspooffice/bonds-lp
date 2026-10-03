@@ -384,7 +384,7 @@ function buildMailBody() {
     `部屋数: ${roomCount}部屋`,
     `部屋: ${room.name}`,
     `宿代: ${yen.format(roomSubtotal)}`,
-    `PSPO会員割引: 宿代30%オフ（-${yen.format(lodgingDiscount)}）`,
+    `P・SPO会員割引: 宿代30%オフ（-${yen.format(lodgingDiscount)}）`,
     `割引後宿代: ${yen.format(discountedRoomSubtotal)}`,
     `朝食: ${wantsBreakfast ? `あり（${yen.format(breakfastSubtotal)}）` : "なし"}`,
     `夕食: ${wantsDinner ? `あり（${yen.format(dinnerSubtotal)}）` : "なし"}`,

@@ -1,6 +1,6 @@
 :root {
   --ink: #17201f;
-  --muted: #65706c;
+  --muted: #414c48;
   --paper: #fbfaf6;
   --surface: #ffffff;
   --line: #d9ded6;
@@ -112,7 +112,7 @@ textarea {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(12, 30, 28, 0.72), rgba(12, 30, 28, 0.22) 52%, rgba(12, 30, 28, 0.1)),
+    linear-gradient(0deg, rgba(12, 30, 28, 0.88), rgba(12, 30, 28, 0.64) 65%, rgba(12, 30, 28, 0.25)),
     url("https://the-bonds.jp/cms/wp-content/themes/the-bonds/assets/img/20260407_top01.webp") center / cover;
 }
 
@@ -120,6 +120,13 @@ textarea {
   position: relative;
   max-width: 760px;
   color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.hero-copy .lead {
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.85;
 }
 
 .eyebrow {
