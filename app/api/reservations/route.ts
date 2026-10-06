@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CHECK_IN_TIMES } from "../../check-in-times";
 
 export const maxDuration = 30;
 
@@ -7,6 +8,7 @@ type ReservationPayload = {
   email: string;
   phone: string;
   checkInDate: string;
+  checkInTime: string;
   nights: number;
   checkoutDate: string;
   guests: number;
@@ -60,6 +62,10 @@ async function saveToSheet(payload: ReservationPayload) {
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as ReservationPayload;
+
+  if (!CHECK_IN_TIMES.includes(payload.checkInTime)) {
+    return NextResponse.json({ message: "チェックイン予定時刻を15:00〜18:00の30分刻みで選択してください。" }, { status: 400 });
+  }
 
   if (!required(payload.name) || !required(payload.email) || !required(payload.phone) || !required(payload.checkInDate)) {
     return NextResponse.json({ message: "氏名、メールアドレス、電話番号、チェックイン日は必須です。" }, { status: 400 });

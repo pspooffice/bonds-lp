@@ -185,7 +185,8 @@ function doPost(e) {
         payload.dinnerSubtotal || 0,
         payload.preDiscountTotal || 0,
         payload.total || 0,
-        payload.message || ""
+        payload.message || "",
+        payload.checkInTime || ""
       ]);
       appendedRow = sheet.getLastRow();
       sheet.getRange(appendedRow, 2).setDataValidation(createStatusValidation());
@@ -277,6 +278,7 @@ function reservationMailBody(payload) {
     "メールアドレス: " + (payload.email || ""),
     "電話番号: " + (payload.phone || ""),
     "チェックイン日: " + (payload.checkInDate || ""),
+    "チェックイン予定時刻: " + (payload.checkInTime || "未指定"),
     "宿泊数: " + (payload.nights || "") + "泊",
     "チェックアウト予定日: " + (payload.checkoutDate || ""),
     "人数: " + (payload.guests || "") + "名",

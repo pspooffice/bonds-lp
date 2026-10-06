@@ -1,5 +1,7 @@
 "use client";
 
+import { CHECK_IN_TIMES } from "./check-in-times";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Room = {
@@ -230,6 +232,7 @@ export default function ReservationPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [checkInDate, setCheckInDate] = useState("");
+  const [checkInTime, setCheckInTime] = useState("");
   const [nights, setNights] = useState(1);
   const [guests, setGuests] = useState(1);
   const [roomCount, setRoomCount] = useState(1);
@@ -428,6 +431,7 @@ export default function ReservationPage() {
       `メールアドレス: ${email}`,
       `電話番号: ${phone}`,
       `チェックイン日: ${checkInDate}`,
+      `チェックイン予定時刻: ${checkInTime}`,
       `宿泊数: ${boundedNights}泊`,
       `チェックアウト予定日: ${checkoutDate}`,
       `人数: ${boundedGuests}名`,
@@ -459,6 +463,7 @@ export default function ReservationPage() {
       email,
       phone,
       checkInDate,
+      checkInTime,
       nights: boundedNights,
       checkoutDate,
       guests: boundedGuests,
@@ -750,6 +755,13 @@ export default function ReservationPage() {
               </div>
             </div>
             <p className="checkout-note">チェックアウト予定日: {checkoutDate}</p>
+            <div className="form-row">
+              <label htmlFor="checkInTime">チェックイン予定時刻</label>
+              <select id="checkInTime" name="checkInTime" value={checkInTime} onChange={(event) => setCheckInTime(event.target.value)} required>
+                <option value="">時刻を選択してください</option>
+                {CHECK_IN_TIMES.map((time) => <option key={time} value={time}>{time}</option>)}
+              </select>
+            </div>
             <section className="availability-calendar" aria-label="空室カレンダー" aria-busy={calendarAvailability.state === "loading"}>
               <div className="calendar-header">
                 <button type="button" disabled={calendarMonth <= CONFIG.campaignStart.slice(0, 7)} onClick={() => setCalendarMonth(shiftMonth(calendarMonth, -1))} aria-label="前の月">
