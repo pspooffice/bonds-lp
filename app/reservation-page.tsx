@@ -1,6 +1,7 @@
 "use client";
 
 import { CHECK_IN_TIMES } from "./check-in-times";
+import { NO_MEAL_STAY_DATES } from "./meal-calendar";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
@@ -214,7 +215,8 @@ function serviceCount(checkInDate: string, nights: number, service: "breakfast" 
 
   for (let offset = firstOffset; offset <= lastOffset; offset += 1) {
     const serviceDate = addDays(start, offset);
-    if (!isUnavailableWeekday(serviceDate, service)) available += 1;
+    const stayDate = service === "breakfast" ? addDays(serviceDate, -1) : serviceDate;
+    if (!isUnavailableWeekday(serviceDate, service) && !NO_MEAL_STAY_DATES.has(formatDate(stayDate))) available += 1;
   }
 
   return available;
@@ -283,9 +285,9 @@ export default function ReservationPage() {
   const dinnerLabel = wantsDinner ? `あり（${dinnerServiceCount}回 / ${yen.format(dinnerSubtotal)}）` : "なし";
   const mealNotice = [
     checkInDate && breakfastUnavailable ? "この日程では朝食を選択できません。" : "",
-    checkInDate && dinnerUnavailable ? "夕食提供日が水曜日のため、夕食は選択できません。" : "",
-    wantsBreakfast && breakfastServiceCount < boundedNights ? `朝食は水曜日を除く${breakfastServiceCount}回分で計算します。` : "",
-    ""
+    checkInDate && dinnerUnavailable ? "この日程では夕食を選択できません。" : "",
+    checkInDate && breakfastServiceCount > 0 && breakfastServiceCount < boundedNights ? `朝食は提供可能な${breakfastServiceCount}回分で計算します。` : "",
+    checkInDate && availableDinnerCount > 0 && availableDinnerCount < boundedNights ? `夕食は提供可能な${availableDinnerCount}回まで選べます。` : ""
   ]
     .filter(Boolean)
     .join(" ");
