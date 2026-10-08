@@ -732,6 +732,20 @@ export default function ReservationPage() {
           </p>
         </section>
 
+        {RESERVATIONS_PAUSED && (
+          <section className="pause-section" aria-labelledby="pause-section-heading">
+            <div>
+              <p className="eyebrow">Reservation status</p>
+              <h2 id="pause-section-heading">新規の仮予約受付を一時停止しています</h2>
+            </div>
+            <div className="pause-section-copy">
+              <p>多くのお申し込みをいただいているため、現在は新たな仮予約を受け付けておりません。</p>
+              <p>すでにお申し込みいただいた方には、内容を確認のうえ順次ご連絡します。</p>
+              <p>受付を再開する際は、このページでお知らせします。</p>
+            </div>
+          </section>
+        )}
+
         {!RESERVATIONS_PAUSED && <section className="reservation-section" id="request">
           <div className="reservation-copy">
             <p className="eyebrow">Temporary request</p>

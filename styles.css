@@ -609,6 +609,35 @@ h3 {
   font-size: 14px;
 }
 
+.pause-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 6vw, 80px);
+  padding: clamp(64px, 9vw, 104px) clamp(18px, 5vw, 72px);
+  color: #fff;
+  background: var(--teal-dark);
+}
+
+.pause-section .eyebrow {
+  color: var(--sun);
+}
+
+.pause-section h2 {
+  max-width: 680px;
+  margin: 0;
+}
+
+.pause-section-copy {
+  align-self: center;
+  max-width: 620px;
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.pause-section-copy p:last-child {
+  margin-bottom: 0;
+}
+
 .reservation-section {
   display: grid;
   grid-template-columns: minmax(280px, 0.8fr) minmax(320px, 1.2fr);
@@ -1140,6 +1169,7 @@ textarea:focus {
   .intro,
   .split,
   .reservation-section,
+  .pause-section,
   .food-section {
     grid-template-columns: 1fr;
   }
