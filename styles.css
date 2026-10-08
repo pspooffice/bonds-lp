@@ -219,6 +219,46 @@ h3 {
   font-weight: 800;
 }
 
+.paused-hero {
+  min-height: 76vh;
+}
+
+.pause-status {
+  max-width: 760px;
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: clamp(24px, 4vw, 40px);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.paused-hero .lead {
+  margin-bottom: 12px;
+}
+
+.pause-reopen {
+  color: #fff;
+  font-weight: 700;
+}
+
+.pause-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+  padding: 24px clamp(18px, 5vw, 72px);
+  background: #e8f1ef;
+  border-bottom: 1px solid var(--line);
+}
+
+.pause-band strong {
+  color: var(--teal-dark);
+}
+
+.pause-band p {
+  margin: 0;
+}
+
 .notice-band {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1114,6 +1154,10 @@ textarea:focus {
     padding-bottom: 88px;
   }
 
+  body:has(.reservations-paused) {
+    padding-bottom: 0;
+  }
+
   .site-header {
     align-items: flex-start;
     flex-direction: column;
@@ -1130,6 +1174,11 @@ textarea:focus {
   .hero {
     min-height: 86vh;
     padding-top: 148px;
+  }
+
+  .paused-hero {
+    min-height: 74vh;
+    padding-bottom: 42px;
   }
 
   .notice-band,

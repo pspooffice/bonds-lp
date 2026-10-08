@@ -2,6 +2,7 @@
 
 import { CHECK_IN_TIMES } from "./check-in-times";
 import { NO_MEAL_STAY_DATES } from "./meal-calendar";
+import { RESERVATIONS_PAUSED } from "./reservation-status";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
@@ -332,6 +333,7 @@ export default function ReservationPage() {
   }, [availableDinnerCount]);
 
   useEffect(() => {
+    if (RESERVATIONS_PAUSED) return;
     if (!checkInDate) {
       setAvailability({ state: "idle", rooms: {} });
       return;
@@ -368,6 +370,7 @@ export default function ReservationPage() {
   }, [checkInDate, boundedNights]);
 
   useEffect(() => {
+    if (RESERVATIONS_PAUSED) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setCalendarAvailability((current) => ({ ...current, state: "loading" }));
@@ -532,25 +535,33 @@ export default function ReservationPage() {
           <a href="#appeal">魅力</a>
           <a href="#food">料理</a>
           <a href="#rooms">お部屋</a>
-          <a href="#request">仮予約</a>
+          {!RESERVATIONS_PAUSED && <a href="#request">仮予約</a>}
         </nav>
       </header>
 
-      <main id="top">
-        <section className="hero">
+      <main id="top" className={RESERVATIONS_PAUSED ? "reservations-paused" : undefined}>
+        <section className={`hero${RESERVATIONS_PAUSED ? " paused-hero" : ""}`}>
           <div className="hero-media" role="img" aria-label="THE BONDSの海辺の外観" />
           <div className="hero-copy">
             <p className="eyebrow">P・SPO member special stay</p>
             <h1>THE BONDS</h1>
-            <p className="lead">
-              P・SPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
-              予約確定ではなく、BONDS側でご希望内容・空室状況を確認してからご案内します。
-            </p>
+            {RESERVATIONS_PAUSED ? (
+              <>
+                <p className="pause-status" role="status">新規の仮予約受付を一時停止しています</p>
+                <p className="lead">
+                  多くのお申し込みをいただいているため、ご案内を確実に行えるよう、現在は新たなお申し込みを受け付けておりません。
+                </p>
+                <p className="pause-reopen">受付再開については、このページでお知らせします。</p>
+              </>
+            ) : (
+              <p className="lead">
+                P・SPO会員様だけが、中島の海辺にあるBONDSを特別価格で利用できます。
+                予約確定ではなく、BONDS側でご希望内容・空室状況を確認してからご案内します。
+              </p>
+            )}
             <p className="campaign-period">キャンペーン期間：2026年10月1日〜12月25日</p>
             <div className="hero-actions">
-              <a className="button primary" href="#request">
-                仮予約へ進む
-              </a>
+              {!RESERVATIONS_PAUSED && <a className="button primary" href="#request">仮予約へ進む</a>}
               <a className="button secondary" href="#rooms">
                 部屋を見る
               </a>
@@ -558,6 +569,12 @@ export default function ReservationPage() {
           </div>
         </section>
 
+        {RESERVATIONS_PAUSED ? (
+          <section className="pause-band" aria-label="お申し込み済みの方へ">
+            <strong>すでにお申し込みいただいた方へ</strong>
+            <p>お申し込み内容を確認のうえ、順次ご連絡します。</p>
+          </section>
+        ) : (
         <section className="notice-band" aria-label="仮予約の流れ">
           <div>
             <span className="step">1</span>
@@ -575,6 +592,7 @@ export default function ReservationPage() {
             <p>空室やお食事についてBONDSからご案内。内容をご確認いただいてから、予約確定です。</p>
           </div>
         </section>
+        )}
 
         <section className="section intro">
           <div>
@@ -584,7 +602,7 @@ export default function ReservationPage() {
           <p>
             THE BONDSは愛媛・中島の姫ヶ浜ビーチそばにあるゲストハウスです。
             多彩な客室と、道後の名店監修の料理を組み合わせて、
-            P・SPO会員様向けの特別価格で滞在の仮予約を受け付けます。
+            P・SPO会員様向けの特別な島ステイをご紹介しています。
           </p>
         </section>
 
@@ -644,7 +662,9 @@ export default function ReservationPage() {
             <h2>島の滞在を特別にする料理</h2>
             <p>
               BONDSでは、松山道後の人気店監修の料理を楽しめます。
-              朝食と夕食をそれぞれ選ぶと、食事料金が自動で加算されます。
+              {RESERVATIONS_PAUSED
+                ? "朝食と夕食で、島での滞在をよりゆったりと楽しめます。"
+                : "朝食と夕食をそれぞれ選ぶと、食事料金が自動で加算されます。"}
             </p>
             <dl className="food-facts">
               <div>
@@ -661,12 +681,10 @@ export default function ReservationPage() {
               </div>
               <div>
                 <dt>予約</dt>
-                <dd>ご希望内容の確認後に確定</dd>
+                <dd>{RESERVATIONS_PAUSED ? "新規の仮予約受付を一時停止中" : "ご希望内容の確認後に確定"}</dd>
               </div>
             </dl>
-            <a className="button primary" href="#request">
-              食事付きで料金を見る
-            </a>
+            {!RESERVATIONS_PAUSED && <a className="button primary" href="#request">食事付きで料金を見る</a>}
           </div>
         </section>
 
@@ -689,10 +707,10 @@ export default function ReservationPage() {
                   </div>
                   <h3>{room.name}</h3>
                   <p>{room.description}</p>
-                  <div className="room-price">
+                  {!RESERVATIONS_PAUSED && <div className="room-price">
                     <small>{room.perRoom ? "P・SPO会員価格・1棟" : "P・SPO会員価格・1名1泊"}</small>
                     <strong>{number.format(memberStartingPrice(room))}円〜</strong>
-                  </div>
+                  </div>}
                 </div>
               </article>
             ))}
@@ -706,12 +724,15 @@ export default function ReservationPage() {
             BONDS公式サイトを見る（別タブで開きます）
           </a>
           <p className="official-booking-note">
-            P・SPO会員特別価格でのお申し込みは、<a href="#request">このページの仮予約フォーム</a>からお願いします。
-            公式サイトからのご予約は、本キャンペーンの対象外です。
+            {RESERVATIONS_PAUSED ? (
+              <>現在、P・SPO会員特別価格での新規受付は停止中です。公式サイトからのご予約は、本キャンペーンの対象外です。</>
+            ) : (
+              <>P・SPO会員特別価格でのお申し込みは、<a href="#request">このページの仮予約フォーム</a>からお願いします。公式サイトからのご予約は、本キャンペーンの対象外です。</>
+            )}
           </p>
         </section>
 
-        <section className="reservation-section" id="request">
+        {!RESERVATIONS_PAUSED && <section className="reservation-section" id="request">
           <div className="reservation-copy">
             <p className="eyebrow">Temporary request</p>
             <h2>仮予約フォーム</h2>
@@ -922,7 +943,7 @@ export default function ReservationPage() {
             </button>
             <p className="sub-note">この送信は予約確定ではありません。ご希望内容、空室、料金条件を確認後に確定します。</p>
           </form>
-        </section>
+        </section>}
       </main>
 
       <footer className="footer">
@@ -930,7 +951,7 @@ export default function ReservationPage() {
         <span>〒791-4503 愛媛県松山市長師55</span>
         <span>TEL: 070-2294-6159</span>
       </footer>
-      <div className="mobile-price-bar" aria-live="polite">
+      {!RESERVATIONS_PAUSED && <div className="mobile-price-bar" aria-live="polite">
         <div>
           <span>P・SPO会員特別価格</span>
           <strong>{yen.format(total)}</strong>
@@ -941,7 +962,7 @@ export default function ReservationPage() {
         >
           仮予約へ
         </button>
-      </div>
+      </div>}
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CHECK_IN_TIMES } from "../../check-in-times";
+import { RESERVATIONS_PAUSED } from "../../reservation-status";
 
 export const maxDuration = 30;
 
@@ -61,6 +62,13 @@ async function saveToSheet(payload: ReservationPayload) {
 }
 
 export async function POST(request: Request) {
+  if (RESERVATIONS_PAUSED) {
+    return NextResponse.json(
+      { message: "現在、新規の仮予約受付を一時停止しています。" },
+      { status: 503 }
+    );
+  }
+
   const payload = (await request.json()) as ReservationPayload;
 
   if (!CHECK_IN_TIMES.includes(payload.checkInTime)) {
