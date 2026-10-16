@@ -504,7 +504,7 @@ export default function ReservationPage() {
 
       if (result.emailSent || result.sheetSaved) {
         setSubmitState("sent");
-        setSubmitMessage("仮予約依頼を送信しました。BONDS側からの返信をお待ちください。");
+        setSubmitMessage("仮予約依頼を送信しました。BONDSからの返信まで2〜3日ほどお時間をいただく場合があります。");
         return;
       }
 
@@ -589,7 +589,7 @@ export default function ReservationPage() {
           <div>
             <span className="step">3</span>
             <strong>BONDSからのご連絡で最終確認</strong>
-            <p>空室やお食事についてBONDSからご案内。内容をご確認いただいてから、予約確定です。</p>
+            <p>空室やお食事についてBONDSからご案内します。返信まで2〜3日ほどかかる場合があります。内容をご確認いただいてから、予約確定です。</p>
           </div>
         </section>
         )}
@@ -752,7 +752,7 @@ export default function ReservationPage() {
           <div className="reservation-copy">
             <p className="eyebrow">Temporary request</p>
             <h2>仮予約フォーム</h2>
-            <p>内容確認後、BONDS側からメールまたは電話でご連絡します。</p>
+            <p>内容確認後、BONDS側からメールまたは電話でご連絡します。返信まで2〜3日ほどお時間をいただく場合があります。</p>
             <div className="price-box desktop-price" aria-live="polite">
               <span>P・SPO会員特別価格</span>
               <strong>{yen.format(total)}</strong>
