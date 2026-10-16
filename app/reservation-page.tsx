@@ -602,7 +602,9 @@ export default function ReservationPage() {
           <p>
             THE BONDSは愛媛・中島の姫ヶ浜ビーチそばにあるゲストハウスです。
             多彩な客室と、道後の名店監修の料理を組み合わせて、
-            P・SPO会員様向けの特別な島ステイをご紹介しています。
+            {RESERVATIONS_PAUSED
+              ? "P・SPO会員様向けの特別な島ステイをご紹介しています。"
+              : "P・SPO会員様向けの特別価格で滞在の仮予約を受け付けます。"}
           </p>
         </section>
 

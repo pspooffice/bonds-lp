@@ -1,1 +1,1 @@
-export const RESERVATIONS_PAUSED = true;
+export const RESERVATIONS_PAUSED = false;
