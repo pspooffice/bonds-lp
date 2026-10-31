@@ -237,7 +237,7 @@ export default function ReservationPage() {
   const [checkInDate, setCheckInDate] = useState("");
   const [checkInTime, setCheckInTime] = useState("");
   const [nights, setNights] = useState(1);
-  const [guests, setGuests] = useState(1);
+  const [guests, setGuests] = useState<number | "">(1);
   const [roomCount, setRoomCount] = useState(1);
   const [roomId, setRoomId] = useState(CONFIG.rooms[0].id);
   const [breakfast, setBreakfast] = useState(false);
@@ -255,7 +255,7 @@ export default function ReservationPage() {
   const boundedRoomCount = clamp(roomCount || 1, 1, maxRooms);
   const minGuests = selectedRoom.minGuests * boundedRoomCount;
   const maxGuests = selectedRoom.maxGuests * boundedRoomCount;
-  const boundedGuests = clamp(guests || minGuests, minGuests, maxGuests);
+  const boundedGuests = clamp(guests === "" ? minGuests : guests, minGuests, maxGuests);
   const checkoutDate = checkInDate ? formatDate(addDays(parseLocalDate(checkInDate), boundedNights)) : "";
   const breakfastServiceCount = serviceCount(checkInDate, boundedNights, "breakfast");
   const availableDinnerCount = serviceCount(checkInDate, boundedNights, "dinner");
@@ -422,8 +422,8 @@ export default function ReservationPage() {
     setGuests(clamp(boundedGuests, selectedRoom.minGuests * nextRoomCount, selectedRoom.maxGuests * nextRoomCount));
   }
 
-  function setSafeGuests(value: number) {
-    setGuests(clamp(value || minGuests, minGuests, maxGuests));
+  function setSafeGuests(value: string) {
+    setGuests(value === "" ? "" : Number(value));
   }
 
   function buildMailBody() {
@@ -890,7 +890,7 @@ export default function ReservationPage() {
             <div className="form-row compact guest-room-grid">
               <div>
                 <label htmlFor="guests">人数</label>
-                <input id="guests" name="guests" type="number" min={minGuests} max={maxGuests} value={boundedGuests} onChange={(event) => setSafeGuests(Number(event.target.value))} required />
+                <input id="guests" name="guests" type="number" min={minGuests} max={maxGuests} value={guests} onChange={(event) => setSafeGuests(event.target.value)} onBlur={() => { if (guests !== "") setGuests(boundedGuests); }} required />
               </div>
               <div>
                 <label htmlFor="roomCount">部屋数</label>
