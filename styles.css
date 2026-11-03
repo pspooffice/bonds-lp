@@ -609,6 +609,50 @@ h3 {
   font-size: 14px;
 }
 
+.cancellation-policy {
+  padding: 40px clamp(18px, 5vw, 72px);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.cancellation-policy h2 {
+  margin-bottom: 12px;
+  font-size: 24px;
+}
+
+.cancellation-policy > p {
+  max-width: 760px;
+  margin-bottom: 18px;
+  color: var(--muted);
+}
+
+.cancellation-rates {
+  max-width: 760px;
+  margin: 0 0 18px;
+}
+
+.cancellation-rates div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.cancellation-rates dt {
+  font-weight: 700;
+}
+
+.cancellation-rates dd {
+  margin: 0;
+  text-align: right;
+}
+
+.cancellation-policy .cancellation-note {
+  margin-bottom: 0;
+  font-size: 14px;
+}
+
 .pause-section {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1180,6 +1224,15 @@ textarea:focus {
 }
 
 @media (max-width: 680px) {
+  .cancellation-rates div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .cancellation-rates dd {
+    text-align: left;
+  }
+
   body {
     padding-bottom: 88px;
   }

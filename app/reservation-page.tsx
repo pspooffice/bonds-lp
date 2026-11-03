@@ -734,6 +734,18 @@ export default function ReservationPage() {
           </p>
         </section>
 
+        <section className="cancellation-policy" aria-labelledby="cancellation-policy-heading">
+          <h2 id="cancellation-policy-heading">キャンセルについて</h2>
+          <p>ご予約確定後のキャンセルにつきましては、以下のキャンセル料を申し受けます。</p>
+          <dl className="cancellation-rates">
+            <div><dt>5日前まで</dt><dd>無料</dd></div>
+            <div><dt>4日前〜3日前</dt><dd>宿泊料金の50％</dd></div>
+            <div><dt>2日前〜当日</dt><dd>宿泊料金の100％</dd></div>
+            <div><dt>無連絡キャンセル</dt><dd>宿泊料金の100％</dd></div>
+          </dl>
+          <p className="cancellation-note">※人数変更や日程変更についても、キャンセル規定の対象となる場合がありますので、あらかじめご了承ください。</p>
+        </section>
+
         {RESERVATIONS_PAUSED && (
           <section className="pause-section" aria-labelledby="pause-section-heading">
             <div>
